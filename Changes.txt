@@ -1,0 +1,19 @@
+pre_init.c:
+Removed extern keyword from declaration of 
+long __bss__ 
+long end
+
+Linker Command file:
+If using a new default file , not the one shipped with the demo
+Change 
+#ifndef __LARGE_DATA_MODEL__
+    .text       : {}>> FLASH                /* Code                              */
+#else
+    .text       : {}>> FLASH2 | FLASH       /* Code                              */
+
+to
+
+#ifndef __LARGE_CODE_MODEL__
+    .text       : {}>> FLASH                /* Code                              */
+#else
+    .text       : {}>> FLASH2 | FLASH       /* Code                              */
