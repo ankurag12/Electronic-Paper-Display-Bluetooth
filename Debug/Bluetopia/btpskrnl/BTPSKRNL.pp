@@ -15,11 +15,11 @@ Bluetopia/btpskrnl/BTPSKRNL.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/
 Bluetopia/btpskrnl/BTPSKRNL.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h
 Bluetopia/btpskrnl/BTPSKRNL.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdarg.h
 Bluetopia/btpskrnl/BTPSKRNL.obj: ../Bluetopia/btpskrnl/BTPSKRNL.h
-Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTAPITyp.h
-Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h
-Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BaseTypes.h
-Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTBTypes.h
-Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h
+Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTAPITyp.h
+Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h
+Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BaseTypes.h
+Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTBTypes.h
+Bluetopia/btpskrnl/BTPSKRNL.obj: C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h
 Bluetopia/btpskrnl/BTPSKRNL.obj: ../Bluetopia/btpskrnl/BKRNLAPI.h
 Bluetopia/btpskrnl/BTPSKRNL.obj: ../Bluetopia/btpskrnl/sprintf.h
 Bluetopia/btpskrnl/BTPSKRNL.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdarg.h
@@ -39,11 +39,11 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdarg.h:
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdarg.h: 
 ../Bluetopia/btpskrnl/BTPSKRNL.h: 
-C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTAPITyp.h: 
-C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h: 
-C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BaseTypes.h: 
-C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTBTypes.h: 
-C:/Users/Robo/Google\ Drive/sTicker/Coding\ Stuff/CCS\ Projects/EPD\ with\ BT\ SPP/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h: 
+C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTAPITyp.h: 
+C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h: 
+C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BaseTypes.h: 
+C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTBTypes.h: 
+C:/Users/Robo/Repos/EPD-BT-Workspace/pl-epd-ti-bt-v4/Bluetopia/include/BTTypes.h: 
 ../Bluetopia/btpskrnl/BKRNLAPI.h: 
 ../Bluetopia/btpskrnl/sprintf.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdarg.h: 

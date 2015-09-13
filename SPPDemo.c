@@ -134,6 +134,8 @@
 
 #define BUFFER_SIZE								(256)
 
+#define ACK_STRING								"1\r\n"
+
 typedef struct _tagLinkKeyInfo_t
 {
    BD_ADDR_t  BD_ADDR;
@@ -196,6 +198,17 @@ typedef struct _tagSend_Info_t
    /* Internal Variables to this Module (Remember that all variables    */
    /* declared static are initialized to 0 automatically by the         */
    /* compiler as part of standard C/C++).                              */
+
+typedef enum _tagData_Packet_Type_t
+{
+	CMD_PREP_FILE_TRANSFER,
+	DATA_FILE_CHUNK,
+	CMD_END_OF_FILE,
+	CMD_UNMOUNT_SDCARD
+
+} Data_Packet_Type_t;
+
+
 
 static int                 UI_Mode;                 /* Holds the UI Mode.              */
 
@@ -304,10 +317,12 @@ static Send_Info_t         SendInfo;                /* Variable that contains   
    /* functionality of this test application.                           */
 static unsigned int        BufferLength;
 
-static unsigned char       Buffer[770];
-static unsigned char 	   RcvdData[770];
+static unsigned char       Buffer[256];
+static unsigned char 	   RcvdData[256];
 
-static Boolean_t           BufferFull;
+static Boolean_t		NewDataArrived;
+
+static Boolean_t        BufferFull;
 
    /* The following string table is used to map HCI Version information */
    /* to an easily displayable version string.                          */
@@ -404,7 +419,7 @@ static int CloseServer(ParameterList_t *TempParam);
 static int OpenRemoteServer(ParameterList_t *TempParam);
 static int CloseRemoteServer(ParameterList_t *TempParam);
 static int Read(ParameterList_t *TempParam);
-static int Write(ParameterList_t *TempParam);
+static int Write(const char *str);
 static int GetConfigParams(ParameterList_t *TempParam);
 static int SetConfigParams(ParameterList_t *TempParam);
 static int GetQueueParams(ParameterList_t *TempParam);
@@ -2934,7 +2949,7 @@ static int Read(ParameterList_t *TempParam)
 {
    int  ret_val;
    int  Result;
-   char Buffer[32];
+   //char Buffer[32];
 
    /* First check to see if the parameters required for the execution of*/
    /* this function appear to be semi-valid.                            */
@@ -2946,8 +2961,6 @@ static int Read(ParameterList_t *TempParam)
       {
          /* The required parameters appear to be semi-valid, send the   */
          /* command to Read Data from SPP.                              */
-         do
-         {
             Result = SPP_Data_Read(BluetoothStackID, SerialPortID, (Word_t)(sizeof(Buffer)-1), (Byte_t*)&Buffer);
 
             /* Next, check the return value to see if the command was   */
@@ -2959,10 +2972,10 @@ static int Read(ParameterList_t *TempParam)
 
                /* Data was read successfully, the result indicates the  */
                /* of bytes that were successfully Read.                 */
-               Display(("Read: %d.\r\n", Result));
+               //Display(("Read: %d.\r\n", Result));
 
-               if(Result > 0)
-                  Display(("Message: %s\r\n", Buffer));
+               //if(Result > 0)
+                //  Display(("Message: %s\r\n", Buffer));
 
                ret_val = 0;
             }
@@ -2973,7 +2986,7 @@ static int Read(ParameterList_t *TempParam)
 
                ret_val = Result;
             }
-         } while(Result > 0);
+
       }
       else
       {
@@ -2997,9 +3010,9 @@ static int Read(ParameterList_t *TempParam)
    /* SPP Port.  The string that is written is defined by the constant  */
    /* TEST_DATA (at the top of this file).  This function requires that */
    /* a valid Bluetooth Stack ID and Serial Port ID exist before        */
-   /* running.  This function returns zero is successful or a negative  */
+   /* running.  This function returns zero if successful or a negative  */
    /* return value if there was an error.                               */
-static int Write(ParameterList_t *TempParam)
+static int Write(const char *str)
 {
    int  ret_val;
    int  Result;
@@ -3009,7 +3022,7 @@ static int Write(ParameterList_t *TempParam)
    if((BluetoothStackID) && (SerialPortID))
    {
       /* Simply write out the default string value.                     */
-      Result = SPP_Data_Write(BluetoothStackID, SerialPortID, (Word_t)BTPS_StringLength(TEST_DATA), (Byte_t *)TEST_DATA);
+      Result = SPP_Data_Write(BluetoothStackID, SerialPortID, (Word_t)BTPS_StringLength(str), (Byte_t *)str);
 
       /* Next, check the return value to see if the command was issued  */
       /* successfully.                                                  */
@@ -3017,7 +3030,7 @@ static int Write(ParameterList_t *TempParam)
       {
          /* The Data was written successfully, Result indicates the     */
          /* number of bytes successfully written.                       */
-         Display(("Wrote: %d.\r\n", Result));
+        // Display(("Wrote: %d bytes.\r\n", Result));
 
          /* Flag success to the caller.                                 */
          ret_val = 0;
@@ -4112,9 +4125,10 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
                else
                {
                   /* Simply inform the user that data has arrived.      */
-                  Display(("\r\n"));
-                  Display(("SPP Data Indication, ID: 0x%04X, Length: 0x%04X.\r\n", SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->SerialPortID,
-                                                                                   SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->DataLength));
+            	  NewDataArrived=TRUE;
+                 // Display(("\r\n"));
+                 // Display(("SPP Data Indication, ID: 0x%04X, Length: 0x%04X.\r\n", SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->SerialPortID,
+                 //                                                                  SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->DataLength));
                }
             }
             break;
@@ -4333,7 +4347,8 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
    UI_Mode                = UI_MODE_SELECT;
    LoopbackActive         = FALSE;
    DisplayRawData         = FALSE;
-   AutomaticReadActive    = TRUE;
+   AutomaticReadActive    = FALSE;
+   NewDataArrived		  = FALSE;
    NumberofValidResponses = 0;
 
    /* Next, makes sure that the Driver Information passed appears to be */
@@ -4451,17 +4466,74 @@ int ReadCmdFromPhoneApp()
 {
 	int show_next = 0;
 	int ret_val = -1;
-	if(strcmp(CmdToEPD, EPD_CMD_NEXT_IMG)==0)
+	static FIL fil;
+	static FRESULT fr;
+	static UINT bw;
+	static Data_Packet_Type_t dataPacketType;
+	static int dataPacketLength;
+	static unsigned char * dataPacketPayload;
+
+
+	if(NewDataArrived)
+	{
+		//
+		ret_val = Read(NULL);
+		NewDataArrived = FALSE;
+
+		dataPacketType = (Data_Packet_Type_t) Buffer[0];
+		dataPacketLength=Buffer[1]+256*Buffer[2];
+		dataPacketPayload = &Buffer[3];
+
+		switch(dataPacketType)
+		{
+			case CMD_PREP_FILE_TRANSFER:
+				Display(("Preparing for File Transfer \r\n"));
+				fr = f_open(&fil, "eyes.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+				Write(ACK_STRING);
+				break;
+
+			case DATA_FILE_CHUNK:
+				//do
+				//{
+					fr = f_write(&fil, dataPacketPayload, dataPacketLength, &bw);		//
+					//Display(("Bytes written = %d \r\n", bw));
+				//} while (Read() > 0);
+
+				Write(ACK_STRING);
+				break;
+
+			case CMD_END_OF_FILE:
+				f_close(&fil);
+				Write(ACK_STRING);
+				Display(("done!"));
+				break;
+
+			case CMD_UNMOUNT_SDCARD:
+				f_mount(NULL,&sdcard);
+
+			default :
+
+		}
+
+
+	}
+	else
+	{
+		//
+	}
+
+	return ret_val;
+/*	if(strcmp(CmdToEPD, EPD_CMD_NEXT_IMG)==0)
 	{
 		BTPS_Delay(10);
 		show_next=1;
 		ret_val = app_slideshow_with_spacebar(&g_plat,img_path,show_next);
 	}
-	else if(memcmp(CmdToEPD, EPD_CMD_SAVE_DATA_SDCARD,2)==0)
+	else if(memcmp(CmdToEPD, EPD_CMD_NULL,2)!=0)
 	{
-		FIL fil;
-		FRESULT fr;
-		UINT bw;
+		static FIL fil;
+		static FRESULT fr;
+		static UINT bw;
 		Display(("\n RcvdData again = \n"));
 		Display(((char *) RcvdData));
 		fr = f_open(&fil, "test4.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
@@ -4469,15 +4541,16 @@ int ReadCmdFromPhoneApp()
 		//fr = f_write(&fil, "++AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 255, &bw);
 		f_close(&fil);
 		f_mount(NULL,&sdcard);
-		Display(("Bytes written = %d", bw));
+		Display(("Bytes written = %d \r\n", bw));
+		Write(ACK_STRING);
 		int i=0;
-/*		for (i=0;i<sizeof(Buffer);i++)
+		for (i=0;i<sizeof(Buffer);i++)
 		{
 			Display(("Address of Buffer[%d] is %d \n",i, &Buffer[i]));
-		}*/
+		}
 	}
 	memcpy(CmdToEPD, EPD_CMD_NULL, sizeof(CmdToEPD));
-	return ret_val;
+	return ret_val;*/
 
 }
    /* The following function is used to process a command line string.  */
