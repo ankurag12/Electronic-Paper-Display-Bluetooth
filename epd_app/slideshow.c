@@ -35,16 +35,13 @@
 
 #define LOG_TAG "slideshow"
 #include "../epd_sys/utils.h"
+#include "slideshow.h"
 
 static DIR dir;
 static FILINFO f;
 static int dir_open = 0;
 static int cmd_next = 0;
 
-/* -- private functions -- */
-
-static int show_image(struct pl_platform *plat, const char *dir,
-		      const char *file);
 
 /* -- public entry point -- */
 
@@ -75,20 +72,17 @@ int app_slideshow(struct pl_platform *plat, const char *path)
 
 		/* end of the directory reached */
 		if (f.fname[0] == '\0') {
-			LOG("Probe 2");
 			dir_open = 0;
 			continue;
 		}
 
 		/* skip directories */
 		if ((f.fname[0] == '.') || (f.fattrib & AM_DIR)){
-			LOG("Probe 3");
 			continue;
 		}
 
 		/* only show PGM files */
 		if (!strstr(f.fname, ".PGM")){
-			LOG("Probe 1");
 			continue;
 		}
 
@@ -153,7 +147,7 @@ int app_slideshow_with_spacebar(struct pl_platform *plat, const char *path, int 
 }
 
 
-static int show_image(struct pl_platform *plat, const char *dir,
+int show_image(struct pl_platform *plat, const char *dir,
 		      const char *file)
 {
 	struct pl_epdc *epdc = &plat->epdc;

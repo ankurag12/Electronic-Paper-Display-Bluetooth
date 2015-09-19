@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include "epd_app/app.h"
+#include "epd_app/slideshow.h"
 
 #define MAX_SUPPORTED_COMMANDS                     (36)  /* Denotes the       */
                                                          /* maximum number of */
@@ -132,7 +133,9 @@
 
 #define SERVER_PORT_NUMBER							(1)
 
-#define BUFFER_SIZE								(256)
+#define MAX_FRAME_SIZE								(795)
+#define TX_BUFFER_SIZE								(800)
+#define RX_BUFFER_SIZE								(800)
 
 #define ACK_STRING								"1\r\n"
 
@@ -204,9 +207,17 @@ typedef enum _tagData_Packet_Type_t
 	CMD_PREP_FILE_TRANSFER,
 	DATA_FILE_CHUNK,
 	CMD_END_OF_FILE,
-	CMD_UNMOUNT_SDCARD
+	CMD_UNMOUNT_SDCARD,
+	CMD_DISPLAY_IMAGE
 
 } Data_Packet_Type_t;
+
+typedef enum _tagData_Packet_Comp_t
+{
+	NO_COMPRESSION,
+	TWO_BYTES_TO_ONE_COMPRESSION
+
+} Data_Packet_Comp_t;
 
 
 
@@ -317,8 +328,8 @@ static Send_Info_t         SendInfo;                /* Variable that contains   
    /* functionality of this test application.                           */
 static unsigned int        BufferLength;
 
-static unsigned char       Buffer[256];
-static unsigned char 	   RcvdData[256];
+static unsigned char       Buffer[810];
+//static unsigned char 	   RcvdData[256];
 
 static Boolean_t		NewDataArrived;
 
@@ -4089,9 +4100,9 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
                     	 Buffer[TempLength] = '\0';
                     	 Display((" Buffer = \n"));
                      	 Display(((char *)Buffer));
-                     	 memcpy(RcvdData,Buffer,sizeof(Buffer));
+/*                     	 memcpy(RcvdData,Buffer,sizeof(Buffer));
                     	 if(strcmp(CmdToEPD, EPD_CMD_NULL)==0)
-                    		 memcpy(CmdToEPD, RcvdData, sizeof(CmdToEPD));
+                    		 memcpy(CmdToEPD, RcvdData, sizeof(CmdToEPD));*/
                     	 //Display(("\n RcvdData = \n;"));
                     	 //Display(((char *)RcvdData));
 
@@ -4403,9 +4414,9 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
                      ServerParams.Params[0].intParam = SERVER_PORT_NUMBER;
 
                      SPP_Configuration_Params_t SPPConfigurationParams;
-                     SPPConfigurationParams.MaximumFrameSize   = (int)BUFFER_SIZE;
-                     SPPConfigurationParams.TransmitBufferSize = (int)BUFFER_SIZE;
-                     SPPConfigurationParams.ReceiveBufferSize  = (int)BUFFER_SIZE;
+                     SPPConfigurationParams.MaximumFrameSize   = (int)MAX_FRAME_SIZE;
+                     SPPConfigurationParams.TransmitBufferSize = (int)TX_BUFFER_SIZE;
+                     SPPConfigurationParams.ReceiveBufferSize  = (int)RX_BUFFER_SIZE;
 
                      int temp_ret;
                      temp_ret = SPP_Set_Configuration_Parameters(BluetoothStackID, &SPPConfigurationParams);
@@ -4470,48 +4481,105 @@ int ReadCmdFromPhoneApp()
 	static FRESULT fr;
 	static UINT bw;
 	static Data_Packet_Type_t dataPacketType;
+	static Data_Packet_Comp_t dataPacketComp;
 	static int dataPacketLength;
-	static unsigned char * dataPacketPayload;
-
+	static unsigned char * dataPacketPayloadPtr;
+	static unsigned char * fileBytesUncomp = NULL;
+	static DIR dir;
+	static int dir_open = 0;
+	static const char fileName[] = "RCVDFILE.PGM";
+	static const char path[] = "/Type11/Rcvd";
+	int i=0; int j=0;
 
 	if(NewDataArrived)
 	{
-		//
+
 		ret_val = Read(NULL);
 		NewDataArrived = FALSE;
-
 		dataPacketType = (Data_Packet_Type_t) Buffer[0];
-		dataPacketLength=Buffer[1]+256*Buffer[2];
-		dataPacketPayload = &Buffer[3];
+		dataPacketComp = (Data_Packet_Comp_t) Buffer[1];
+		dataPacketLength=Buffer[2]+256*Buffer[3];
+		dataPacketPayloadPtr = &Buffer[4];
 
 		switch(dataPacketType)
 		{
 			case CMD_PREP_FILE_TRANSFER:
 				Display(("Preparing for File Transfer \r\n"));
-				fr = f_open(&fil, "eyes.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
+					Display(("Baudrate upgrade to 921600 failed \r\n"));
+				if (f_chdir(path) != FR_OK) {
+					Display(("Failed to change directory [%s]", path));
+					return -1;
+				}
+				fr = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+				BTPS_Delay(20);
 				Write(ACK_STRING);
 				break;
 
 			case DATA_FILE_CHUNK:
-				//do
-				//{
-					fr = f_write(&fil, dataPacketPayload, dataPacketLength, &bw);		//
-					//Display(("Bytes written = %d \r\n", bw));
-				//} while (Read() > 0);
+
+				switch(dataPacketComp) {
+					case NO_COMPRESSION:
+						fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
+						for(i=0; i<dataPacketLength; i++)
+							fileBytesUncomp[i] = *(dataPacketPayloadPtr+i);
+						break;
+
+					case TWO_BYTES_TO_ONE_COMPRESSION:
+						dataPacketLength = dataPacketLength*2;
+						fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
+						for(i=0, j=0; i<dataPacketLength; i+=2, j++) {
+							fileBytesUncomp[i] = (*(dataPacketPayloadPtr+j) & 0xF0) | (*(dataPacketPayloadPtr+j)>>4);
+							fileBytesUncomp[i+1] = (*(dataPacketPayloadPtr+j)<<4) | (*(dataPacketPayloadPtr+j) & 0x0F);
+						}
+						break;
+					default:
+						Display(("Unknown compression type. \r\n"));
+						return -1;
+				}
+
+
+				fr = f_write(&fil, fileBytesUncomp, dataPacketLength, &bw);		//
+				//Display(("Bytes written = %d \r\n", bw));
 
 				Write(ACK_STRING);
+				free(fileBytesUncomp);
 				break;
 
 			case CMD_END_OF_FILE:
 				f_close(&fil);
 				Write(ACK_STRING);
-				Display(("done!"));
+				BTPS_Delay(20);
+				Display(("done!\r\n"));
+				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)115200))
+					Display(("Baudrate setting to default 115200 failed \r\n"));
 				break;
 
 			case CMD_UNMOUNT_SDCARD:
 				f_mount(NULL,&sdcard);
+				break;
+
+			case CMD_DISPLAY_IMAGE:
+				if (!dir_open) {
+					 //(re-)open the directory
+					if (f_opendir(&dir, path) != FR_OK) {
+						Display(("Failed to open directory [%s] \r\n", path));
+						return -1;
+					}
+					dir_open = 1;
+				}
+				//app_clear(&g_plat);
+				if (show_image(&g_plat, path, fileName)) {
+					Display(("Failed to show image\r\n"));
+					return -1;
+				}
+				Write(ACK_STRING);
+				break;
 
 			default :
+				Display(("Unknown data packet ID \r\n"));
+				Write("2\r\n");
+
 
 		}
 
@@ -4523,34 +4591,6 @@ int ReadCmdFromPhoneApp()
 	}
 
 	return ret_val;
-/*	if(strcmp(CmdToEPD, EPD_CMD_NEXT_IMG)==0)
-	{
-		BTPS_Delay(10);
-		show_next=1;
-		ret_val = app_slideshow_with_spacebar(&g_plat,img_path,show_next);
-	}
-	else if(memcmp(CmdToEPD, EPD_CMD_NULL,2)!=0)
-	{
-		static FIL fil;
-		static FRESULT fr;
-		static UINT bw;
-		Display(("\n RcvdData again = \n"));
-		Display(((char *) RcvdData));
-		fr = f_open(&fil, "test4.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
-		fr = f_write(&fil, RcvdData, sizeof(RcvdData), &bw);
-		//fr = f_write(&fil, "++AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 255, &bw);
-		f_close(&fil);
-		f_mount(NULL,&sdcard);
-		Display(("Bytes written = %d \r\n", bw));
-		Write(ACK_STRING);
-		int i=0;
-		for (i=0;i<sizeof(Buffer);i++)
-		{
-			Display(("Address of Buffer[%d] is %d \n",i, &Buffer[i]));
-		}
-	}
-	memcpy(CmdToEPD, EPD_CMD_NULL, sizeof(CmdToEPD));
-	return ret_val;*/
 
 }
    /* The following function is used to process a command line string.  */

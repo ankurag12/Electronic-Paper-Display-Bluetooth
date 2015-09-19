@@ -39,7 +39,7 @@
    /*          allocation.                                              */
 #ifndef BTPS_MEMORY_BUFFER_SIZE
 
-   #define BTPS_MEMORY_BUFFER_SIZE                       (2900)
+   #define BTPS_MEMORY_BUFFER_SIZE                       (6000)
 
 #endif
 

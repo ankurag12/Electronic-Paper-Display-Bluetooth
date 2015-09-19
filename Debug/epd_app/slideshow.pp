@@ -26,6 +26,7 @@ epd_app/slideshow.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/st
 epd_app/slideshow.obj: ../epd_app/../epd_sys/utils.h
 epd_app/slideshow.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
 epd_app/slideshow.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdio.h
+epd_app/slideshow.obj: ../epd_app/slideshow.h
 
 ../epd_app/slideshow.c: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdio.h: 
@@ -53,3 +54,4 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h:
 ../epd_app/../epd_sys/utils.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdio.h: 
+../epd_app/slideshow.h: 

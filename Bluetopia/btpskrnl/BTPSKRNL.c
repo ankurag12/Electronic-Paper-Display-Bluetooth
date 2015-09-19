@@ -796,9 +796,10 @@ void BTPSAPI *BTPS_AllocateMemory(unsigned long MemorySize)
    if(MemorySize)
    {
       ret_val = _Malloc(MemorySize);
-
       if(!ret_val)
          BTPS_OutputMessage("Alloc Failed: %d\r\n", MemorySize);
+     // else
+    //	 BTPS_OutputMessage("Memory Allocated: %d\r\n", MemorySize);
    }
    else
    {

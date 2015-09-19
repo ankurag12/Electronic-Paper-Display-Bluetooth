@@ -63,6 +63,7 @@ SPPDemo.obj: ../Hardware/msp430/../MSP430Utils.h
 SPPDemo.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h
 SPPDemo.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
 SPPDemo.obj: ../epd_app/app.h
+SPPDemo.obj: ../epd_app/slideshow.h
 
 ../SPPDemo.c: 
 ../Main.h: 
@@ -127,3 +128,4 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/intrinsics_legacy_undefs.
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 
 ../epd_app/app.h: 
+../epd_app/slideshow.h: 
