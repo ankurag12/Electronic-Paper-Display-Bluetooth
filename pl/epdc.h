@@ -30,6 +30,7 @@
 #include <stdint.h>
 
 #include "wflib.h"
+#include "types.h"
 
 /* Set to 1 to enable stub EPDC implementation */
 #define PL_EPDC_STUB 0
@@ -77,6 +78,8 @@ struct pl_epdc{
 	int (*pattern_check)(struct pl_epdc *p, uint16_t size);
 	int (*load_image)(struct pl_epdc *p, const char *path,
 			  const struct pl_area *area, int left, int top);
+	int (*load_image_directstream)(struct pl_epdc *p, unsigned char **data, int dataLen,
+		       const struct pl_area *area, int left, int top, file_streaming_stage_t stage);
 	int (*set_epd_power)(struct pl_epdc *p, int on);
 
 	const struct pl_wfid *wf_table;

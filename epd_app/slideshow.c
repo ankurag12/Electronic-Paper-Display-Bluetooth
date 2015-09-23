@@ -183,3 +183,61 @@ int show_image(struct pl_platform *plat, const char *dir,
 
 	return 0;
 }
+
+
+int show_image_directstream(struct pl_platform *plat, unsigned char **data, int dataLen, file_streaming_stage_t stage)
+{
+	struct pl_epdc *epdc = &plat->epdc;
+	struct pl_epdpsu *psu = &plat->psu;
+	//char path[MAX_PATH_LEN];
+	int wfid;
+
+	switch(stage) {
+		case HEADER:
+			wfid = pl_epdc_get_wfid(epdc, wf_refresh);
+
+			if (wfid < 0)
+				return -1;
+
+			//if (join_path(path, sizeof(path), dir, file))
+			//	return -1;
+
+			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+				return -1;
+
+			break;
+
+		case BODY:
+			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+				return -1;
+			break;
+
+		case FINISH:
+			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+				return -1;
+
+			if (epdc->update_temp(epdc))
+				return -1;
+
+			if (psu->on(psu))
+				return -1;
+
+			if (epdc->update(epdc, wfid, NULL))
+				return -1;
+
+			if (epdc->wait_update_end(epdc))
+				return -1;
+
+			if (psu->off(psu))
+				return -1;
+
+			break;
+
+		default:
+			LOG("Unknown file streaming stage");
+			return -1;
+	}
+
+
+	return 0;
+}

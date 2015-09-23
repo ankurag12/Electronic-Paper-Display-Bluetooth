@@ -53,4 +53,12 @@ struct pnm_header {
 extern int pnm_read_header(FIL *pnm_file, struct pnm_header *hdr);
 extern int pnm_read_int32(FIL *pnm_file, int32_t *value);
 
+#define pnm_read_int_directstream(_d, _l) ({			\
+		int32_t _value;			\
+		pnm_read_int32_directstream(_d, _l, &_value);	\
+		(int)_value; })
+
+int pnm_read_header_directstream(unsigned char **dataPtr, unsigned int dataLen, struct pnm_header *hdr);
+int pnm_read_int32_directstream(unsigned char **data, unsigned int dataLen, int32_t *value);
+
 #endif /* PNM_UTILS_H */

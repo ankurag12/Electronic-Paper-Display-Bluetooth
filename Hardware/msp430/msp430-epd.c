@@ -84,7 +84,7 @@ static const char VERSION[] = "v008";
 /* Platform instance, to be passed to other modules */
 struct pl_platform g_plat;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
 
- FATFS sdcard;
+static FATFS sdcard;				// GLOBAL !!
 
 /* --- System GPIOs --- */
 
@@ -390,7 +390,7 @@ void epd_sys_init(void)
 	/* run the application */
 
 	//msp430_uart_write(1,"Hello World",11);		// TEST FOR UART
-	// app_clear(&g_plat);			//TEMPORARY!!
+	 app_clear(&g_plat);			//TEMPORARY!!
 	//app_slideshow(&g_plat,"img");
 	//if (app_demo(&g_plat))
 	//	abort_msg("Application failed", ABORT_APPLICATION);

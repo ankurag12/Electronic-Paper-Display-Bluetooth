@@ -48,6 +48,7 @@ Main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h
 Main.obj: ../pl/../FatFs/ff.h
 Main.obj: ../pl/../FatFs/fatfs-types.h
 Main.obj: ../pl/../FatFs/ffconf.h
+Main.obj: ../pl/types.h
 Main.obj: ../pl/gpio.h
 Main.obj: ../pl/../Hardware/msp430/plat-gpio.h
 Main.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
@@ -112,6 +113,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h:
 ../pl/../FatFs/ff.h: 
 ../pl/../FatFs/fatfs-types.h: 
 ../pl/../FatFs/ffconf.h: 
+../pl/types.h: 
 ../pl/gpio.h: 
 ../pl/../Hardware/msp430/plat-gpio.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 

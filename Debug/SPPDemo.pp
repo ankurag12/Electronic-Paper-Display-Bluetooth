@@ -48,6 +48,7 @@ SPPDemo.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h
 SPPDemo.obj: ../pl/../FatFs/ff.h
 SPPDemo.obj: ../pl/../FatFs/fatfs-types.h
 SPPDemo.obj: ../pl/../FatFs/ffconf.h
+SPPDemo.obj: ../pl/types.h
 SPPDemo.obj: ../pl/gpio.h
 SPPDemo.obj: ../pl/../Hardware/msp430/plat-gpio.h
 SPPDemo.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
@@ -113,6 +114,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h:
 ../pl/../FatFs/ff.h: 
 ../pl/../FatFs/fatfs-types.h: 
 ../pl/../FatFs/ffconf.h: 
+../pl/types.h: 
 ../pl/gpio.h: 
 ../pl/../Hardware/msp430/plat-gpio.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 

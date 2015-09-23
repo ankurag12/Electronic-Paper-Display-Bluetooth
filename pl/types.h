@@ -28,6 +28,13 @@
 #ifndef INCLUDE_PL_TYPES_H
 #define INCLUDE_PL_TYPES_H 1
 
+
+typedef enum _tagFile_streaming_stage_t {
+	HEADER,
+	BODY,
+	FINISH
+} file_streaming_stage_t;
+
 struct pl_area {
 	int left;
 	int top;

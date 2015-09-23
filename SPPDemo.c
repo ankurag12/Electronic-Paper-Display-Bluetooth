@@ -133,11 +133,15 @@
 
 #define SERVER_PORT_NUMBER							(1)
 
-#define MAX_FRAME_SIZE								(795)
+#define MAX_FRAME_SIZE								(796)
 #define TX_BUFFER_SIZE								(800)
 #define RX_BUFFER_SIZE								(800)
 
 #define ACK_STRING								"1\r\n"
+#define ERR_STRING								"2\r\n"
+
+
+//#define SAVE_IMG_ON_EXT_FLASH
 
 typedef struct _tagLinkKeyInfo_t
 {
@@ -204,11 +208,13 @@ typedef struct _tagSend_Info_t
 
 typedef enum _tagData_Packet_Type_t
 {
-	CMD_PREP_FILE_TRANSFER,
-	DATA_FILE_CHUNK,
-	CMD_END_OF_FILE,
-	CMD_UNMOUNT_SDCARD,
-	CMD_DISPLAY_IMAGE
+    CMD_PREP_FILE_TRANSFER,
+    PNM_FILE_HEADER,
+    DATA_FILE_CHUNK,
+    CMD_END_OF_FILE,
+    CMD_UNMOUNT_SDCARD,
+    CMD_DISPLAY_IMAGE,
+    CMD_DEFAULT
 
 } Data_Packet_Type_t;
 
@@ -329,6 +335,7 @@ static Send_Info_t         SendInfo;                /* Variable that contains   
 static unsigned int        BufferLength;
 
 static unsigned char       Buffer[810];
+static unsigned char 		fileBytesUncomp[1600];
 //static unsigned char 	   RcvdData[256];
 
 static Boolean_t		NewDataArrived;
@@ -4000,6 +4007,7 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
                   ret_val           = 0;
                   Connection_Handle = 0;
                }
+
             }
             break;
          case etPort_Close_Port_Indication:
@@ -4475,8 +4483,7 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
 
 int ReadCmdFromPhoneApp()
 {
-	int show_next = 0;
-	int ret_val = -1;
+	static int ret_val = -1;
 	static FIL fil;
 	static FRESULT fr;
 	static UINT bw;
@@ -4484,12 +4491,18 @@ int ReadCmdFromPhoneApp()
 	static Data_Packet_Comp_t dataPacketComp;
 	static int dataPacketLength;
 	static unsigned char * dataPacketPayloadPtr;
-	static unsigned char * fileBytesUncomp = NULL;
+	//static unsigned char * fileBytesUncomp = NULL;
 	static DIR dir;
 	static int dir_open = 0;
 	static const char fileName[] = "RCVDFILE.PGM";
 	static const char path[] = "/Type11/Rcvd";
-	int i=0; int j=0;
+	static int i=0;
+	static int j=0;
+	static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
+	static int ctr=0;
+
+	//Display(("%d\r\n",ctr++));
+
 
 	if(NewDataArrived)
 	{
@@ -4507,12 +4520,36 @@ int ReadCmdFromPhoneApp()
 				Display(("Preparing for File Transfer \r\n"));
 				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
 					Display(("Baudrate upgrade to 921600 failed \r\n"));
+
+
+#ifdef SAVE_IMG_ON_EXT_FLASH
 				if (f_chdir(path) != FR_OK) {
 					Display(("Failed to change directory [%s]", path));
 					return -1;
 				}
 				fr = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+#endif
+
 				BTPS_Delay(20);
+				Write(ACK_STRING);
+				break;
+
+			case PNM_FILE_HEADER:
+
+#ifdef SAVE_IMG_ON_EXT_FLASH
+				fr = f_write(&fil, dataPacketPayloadPtr, dataPacketLength, &bw);
+				if(fr != FR_OK || bw!=dataPacketLength) {
+					Display(("Error in writing on flash"));
+					Write(ERR_STRING);
+					break;
+				}
+#endif
+
+				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, HEADER)) {
+					Display(("Some issue in initializing file streaming \r\n"));
+					break;
+				}
+
 				Write(ACK_STRING);
 				break;
 
@@ -4520,14 +4557,14 @@ int ReadCmdFromPhoneApp()
 
 				switch(dataPacketComp) {
 					case NO_COMPRESSION:
-						fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
+						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
 						for(i=0; i<dataPacketLength; i++)
 							fileBytesUncomp[i] = *(dataPacketPayloadPtr+i);
 						break;
 
 					case TWO_BYTES_TO_ONE_COMPRESSION:
 						dataPacketLength = dataPacketLength*2;
-						fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
+						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
 						for(i=0, j=0; i<dataPacketLength; i+=2, j++) {
 							fileBytesUncomp[i] = (*(dataPacketPayloadPtr+j) & 0xF0) | (*(dataPacketPayloadPtr+j)>>4);
 							fileBytesUncomp[i+1] = (*(dataPacketPayloadPtr+j)<<4) | (*(dataPacketPayloadPtr+j) & 0x0F);
@@ -4538,25 +4575,44 @@ int ReadCmdFromPhoneApp()
 						return -1;
 				}
 
+#ifdef SAVE_IMG_ON_EXT_FLASH
+				fr = f_write(&fil, fileBytesUncomp, dataPacketLength, &bw);
+				if(fr != FR_OK || bw!=dataPacketLength) {
+					Display(("Error in writing on flash"));
+					Write(ERR_STRING);
+					break;
+				}
+#endif
 
-				fr = f_write(&fil, fileBytesUncomp, dataPacketLength, &bw);		//
-				//Display(("Bytes written = %d \r\n", bw));
 
+				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, BODY)) {
+					Display(("Some issue in receving file body"));
+					Write(ERR_STRING);
+					break;
+				}
+
+				//free(fileBytesUncomp);
 				Write(ACK_STRING);
-				free(fileBytesUncomp);
 				break;
 
 			case CMD_END_OF_FILE:
-				f_close(&fil);
-				Write(ACK_STRING);
-				BTPS_Delay(20);
+
+#ifdef SAVE_IMG_ON_EXT_FLASH
+				if(f_close(&fil) != FR_OK) {
+					Display(("Error in closing file"));
+					break;
+				}
+#endif
+				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, FINISH)) {
+					Display(("Some issue in finishing file streaming \r\n"));
+					break;
+				}
 				Display(("done!\r\n"));
-				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)115200))
-					Display(("Baudrate setting to default 115200 failed \r\n"));
+				Write(ACK_STRING);
 				break;
 
 			case CMD_UNMOUNT_SDCARD:
-				f_mount(NULL,&sdcard);
+				//f_mount(NULL,&sdcard);
 				break;
 
 			case CMD_DISPLAY_IMAGE:
@@ -4568,7 +4624,7 @@ int ReadCmdFromPhoneApp()
 					}
 					dir_open = 1;
 				}
-				//app_clear(&g_plat);
+				app_clear(&g_plat);
 				if (show_image(&g_plat, path, fileName)) {
 					Display(("Failed to show image\r\n"));
 					return -1;
@@ -4578,11 +4634,15 @@ int ReadCmdFromPhoneApp()
 
 			default :
 				Display(("Unknown data packet ID \r\n"));
+/*				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)115200))
+					Display(("Baudrate setting to default 115200 failed \r\n"));
+				if(HCI_Write_Link_Policy_Settings(BluetoothStackID, Connection_Handle, HCI_LINK_POLICY_SETTINGS_ENABLE_MASTER_SLAVE_SWITCH|HCI_LINK_POLICY_SETTINGS_ENABLE_HOLD_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_PARK_MODE, &StatusResult, &Connection_HandleResult))
+					Display(("Disabling LPM in BT module failed"));*/
+				BTPS_Delay(20);
 				Write("2\r\n");
 
 
 		}
-
 
 	}
 	else

@@ -13,6 +13,7 @@ epson/epson-i2c.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdl
 epson/epson-i2c.obj: ../epson/../epson/../pl/../FatFs/ff.h
 epson/epson-i2c.obj: ../epson/../epson/../pl/../FatFs/fatfs-types.h
 epson/epson-i2c.obj: ../epson/../epson/../pl/../FatFs/ffconf.h
+epson/epson-i2c.obj: ../epson/../epson/../pl/types.h
 epson/epson-i2c.obj: ../epson/../pl/i2c.h
 epson/epson-i2c.obj: ../epson/../epd_sys/utils.h
 epson/epson-i2c.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
@@ -32,6 +33,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h:
 ../epson/../epson/../pl/../FatFs/ff.h: 
 ../epson/../epson/../pl/../FatFs/fatfs-types.h: 
 ../epson/../epson/../pl/../FatFs/ffconf.h: 
+../epson/../epson/../pl/types.h: 
 ../epson/../pl/i2c.h: 
 ../epson/../epd_sys/utils.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 

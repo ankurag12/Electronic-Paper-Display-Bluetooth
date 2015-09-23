@@ -41,6 +41,7 @@
 #include "../epd_sys/utils.h"
 
 #include "../epd_app/parser.h"
+#include "../epd_app/slideshow.h"
 
 /* Set to 1 to enable verbose update and EPD power on/off log messages */
 #define VERBOSE 0
@@ -84,6 +85,7 @@ static int do_fill(struct s1d135xx *p, const struct pl_area *area,
 		   unsigned bpp, uint8_t g);
 static int wflib_wr(void *ctx, const uint8_t *data, size_t n);
 static int transfer_file(FIL *file);
+static int transfer_file_directstream(unsigned char **dataPtr, unsigned int dataLen);
 static int transfer_image(FIL *f, const struct pl_area *area, int left,
 			  int top, int width);
 static void transfer_data(const uint8_t *data, size_t n);
@@ -347,6 +349,77 @@ int s1d135xx_load_image(struct s1d135xx *p, const char *path, uint16_t mode,
 
 	return s1d135xx_wait_idle(p);
 }
+
+
+int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr, int dataLen, uint16_t mode,
+			unsigned bpp, const struct pl_area *area, int left,
+			int top, file_streaming_stage_t stage)
+{
+	int stat;
+	switch(stage)
+	{
+		case HEADER:
+		{
+			struct pnm_header hdr;
+			//FIL img_file;
+			// if (f_open(&img_file, path, FA_READ) != FR_OK)
+			//	return -1;
+
+			if (pnm_read_header_directstream(dataPtr, dataLen, &hdr))
+				return -1;
+
+			set_cs(p, 0);
+
+			if (area != NULL) {
+				send_cmd_area(p, S1D135XX_CMD_LD_IMG_AREA, mode, area);
+			} else {
+				send_cmd(p, S1D135XX_CMD_LD_IMG);
+				send_param(mode);
+			}
+
+			set_cs(p, 1);
+
+			if (s1d135xx_wait_idle(p))
+				return -1;
+
+			set_cs(p, 0);
+			send_cmd(p, S1D135XX_CMD_WRITE_REG);
+			send_param(S1D135XX_REG_HOST_MEM_PORT);
+			break;
+		}
+		case BODY:
+		{
+
+			if (area == NULL)
+				return transfer_file_directstream(dataPtr, dataLen);
+			else
+				//stat = transfer_image(&img_file, area, left, top, hdr.width);
+				LOG("Area is not NULL, transferring partial image not yet implemented");
+			break;
+		}
+
+		case FINISH:
+		{
+			set_cs(p, 1);
+
+			if (s1d135xx_wait_idle(p))
+				return -1;
+
+			send_cmd_cs(p, S1D135XX_CMD_LD_IMG_END);
+
+			return s1d135xx_wait_idle(p);
+
+		}
+
+		default:
+			LOG("Unknown streaming stage \r\n");
+			return -1;
+
+	}
+	return 0;
+
+}
+
 
 int s1d135xx_update(struct s1d135xx *p, int wfid, const struct pl_area *area)
 {
@@ -663,6 +736,14 @@ static int transfer_file(FIL *file)
 
 		transfer_data(data, count);
 	}
+
+	return 0;
+}
+
+static int transfer_file_directstream(unsigned char **dataPtr, unsigned int dataLen)
+{
+
+	transfer_data((uint8_t *)(*dataPtr), (size_t)dataLen);
 
 	return 0;
 }

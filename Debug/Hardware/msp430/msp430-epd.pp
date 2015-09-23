@@ -11,6 +11,7 @@ Hardware/msp430/msp430-epd.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/i
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../epson/../pl/../FatFs/ff.h
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../epson/../pl/../FatFs/fatfs-types.h
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../epson/../pl/../FatFs/ffconf.h
+Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../epson/../pl/types.h
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../pl/platform.h
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../pl/../epd_sys/config.h
 Hardware/msp430/msp430-epd.obj: ../Hardware/msp430/../../pl/../epd_sys/i2c-eeprom.h
@@ -82,6 +83,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h:
 ../Hardware/msp430/../../epson/../pl/../FatFs/ff.h: 
 ../Hardware/msp430/../../epson/../pl/../FatFs/fatfs-types.h: 
 ../Hardware/msp430/../../epson/../pl/../FatFs/ffconf.h: 
+../Hardware/msp430/../../epson/../pl/types.h: 
 ../Hardware/msp430/../../pl/platform.h: 
 ../Hardware/msp430/../../pl/../epd_sys/config.h: 
 ../Hardware/msp430/../../pl/../epd_sys/i2c-eeprom.h: 

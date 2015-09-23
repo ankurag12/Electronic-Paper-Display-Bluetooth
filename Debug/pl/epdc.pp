@@ -9,6 +9,7 @@ pl/epdc.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h
 pl/epdc.obj: ../pl/../FatFs/ff.h
 pl/epdc.obj: ../pl/../FatFs/fatfs-types.h
 pl/epdc.obj: ../pl/../FatFs/ffconf.h
+pl/epdc.obj: ../pl/types.h
 pl/epdc.obj: ../pl/epdpsu.h
 pl/epdc.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h
 pl/epdc.obj: ../pl/../epd_sys/assert-pl.h
@@ -26,6 +27,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h:
 ../pl/../FatFs/ff.h: 
 ../pl/../FatFs/fatfs-types.h: 
 ../pl/../FatFs/ffconf.h: 
+../pl/types.h: 
 ../pl/epdpsu.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/string.h: 
 ../pl/../epd_sys/assert-pl.h: 

@@ -33,6 +33,7 @@
 
 #define LOG_TAG "s1d13524"
 #include "../epd_sys/utils.h"
+#include "../epd_app/slideshow.h"
 
 #define S1D13524_PROD_CODE              0x004F
 #define S1D13524_STATUS_HRDY            (1 << 5)
@@ -225,6 +226,15 @@ static int s1d13524_load_image(struct pl_epdc *epdc, const char *path,
 				   left, top);
 }
 
+static int s1d13524_load_image_directstream(struct pl_epdc *epdc, unsigned char **data, int dataLen,
+			       const struct pl_area *area, int left, int top, file_streaming_stage_t stage)
+{
+	struct s1d135xx *p = epdc->data;	// Typecasting generic pointer data to s1d135xx
+
+	return s1d135xx_load_image_directstream(p, data, dataLen, S1D13524_LD_IMG_8BPP, 8, area,
+				   left, top, stage);
+}
+
 /* -- initialisation -- */
 
 int epson_epdc_early_init_s1d13524(struct s1d135xx *p)
@@ -288,6 +298,7 @@ int epson_epdc_init_s1d13524(struct pl_epdc *epdc)
 	epdc->fill = s1d13524_fill;
 	epdc->pattern_check = s1d13524_pattern_check;
 	epdc->load_image = s1d13524_load_image;
+	epdc->load_image_directstream = s1d13524_load_image_directstream;
 	epdc->wf_table = epson_epdc_wf_table_s1d13524;
 	epdc->xres = s1d135xx_read_reg(p, S1D13524_REG_LINE_DATA_LENGTH);
 	epdc->yres = s1d135xx_read_reg(p, S1D13524_REG_FRAME_DATA_LENGTH);

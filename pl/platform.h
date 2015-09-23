@@ -38,6 +38,7 @@
 
 struct pl_hwinfo;
 
+
 /* Common platform data */
 
 struct pl_system_gpio {

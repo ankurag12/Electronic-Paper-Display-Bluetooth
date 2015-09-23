@@ -18,6 +18,7 @@ Hardware/msp430/msp430-sdcard.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.
 Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/../FatFs/ff.h
 Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/../FatFs/fatfs-types.h
 Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/../FatFs/ffconf.h
+Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/types.h
 Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/gpio.h
 Hardware/msp430/msp430-sdcard.obj: ../Hardware/msp430/../../pl/../Hardware/msp430/plat-gpio.h
 Hardware/msp430/msp430-sdcard.obj: C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h
@@ -50,6 +51,7 @@ C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/linkage.h:
 ../Hardware/msp430/../../pl/../FatFs/ff.h: 
 ../Hardware/msp430/../../pl/../FatFs/fatfs-types.h: 
 ../Hardware/msp430/../../pl/../FatFs/ffconf.h: 
+../Hardware/msp430/../../pl/types.h: 
 ../Hardware/msp430/../../pl/gpio.h: 
 ../Hardware/msp430/../../pl/../Hardware/msp430/plat-gpio.h: 
 C:/ti/ccsv6/tools/compiler/ti-cgt-msp430_4.4.4/include/stdlib.h: 

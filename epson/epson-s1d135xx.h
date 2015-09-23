@@ -101,6 +101,9 @@ extern int s1d135xx_pattern_check(struct s1d135xx *p, uint16_t height,
 extern int s1d135xx_load_image(struct s1d135xx *p, const char *path,
 			       uint16_t mode, unsigned bpp,
 			       const struct pl_area *area, int left, int top);
+extern int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr, int dataLen, uint16_t mode,
+		unsigned bpp, const struct pl_area *area, int left,
+		int top, file_streaming_stage_t stage);
 extern int s1d135xx_update(struct s1d135xx *p, int wfid,
 			   const struct pl_area *area);
 extern int s1d135xx_wait_update_end(struct s1d135xx *p);
