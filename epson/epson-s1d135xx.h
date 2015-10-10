@@ -98,7 +98,7 @@ extern int s1d135xx_fill(struct s1d135xx *p, uint16_t mode, unsigned bpp,
 			 const struct pl_area *a, uint8_t grey);
 extern int s1d135xx_pattern_check(struct s1d135xx *p, uint16_t height,
 			uint16_t width, uint16_t checker_size, uint16_t mode);
-extern int s1d135xx_load_image(struct s1d135xx *p, const char *path,
+extern int s1d135xx_load_image(struct s1d135xx *p, uint8_t id,
 			       uint16_t mode, unsigned bpp,
 			       const struct pl_area *area, int left, int top);
 extern int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr, int dataLen, uint16_t mode,
@@ -116,5 +116,7 @@ extern void s1d135xx_cmd(struct s1d135xx *p, uint16_t cmd,
 extern uint16_t s1d135xx_read_reg(struct s1d135xx *p, uint16_t reg);
 extern void s1d135xx_write_reg(struct s1d135xx *p, uint16_t reg, uint16_t val);
 extern int s1d135xx_load_register_overrides(struct s1d135xx *p);
+
+extern struct _FlashHW flashObj;
 
 #endif /* INCLUDE_EPSON_S1D135XX_H */

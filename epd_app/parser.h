@@ -27,7 +27,7 @@
 #ifndef INCLUDE_APP_PARSER_H
 #define INCLUDE_APP_PARSER_H 1
 
-#include "../FatFs/ff.h"
+#include "../FFIS/FlashFileIndexSystem.h"
 
 struct pl_area;
 
@@ -56,6 +56,9 @@ extern int parser_read_area(const char *str, const char *sep,
 /** Read one line worth of data from a text file
  *  Return 1 if some data was read, 0 if end of file reached and no data was
  *  read but no error occured and -1 if an error occured.  */
-extern int parser_read_file_line(FIL *f, char *buffer, int max_length);
+
+extern int parser_read_ffis_file_line(fileIndexEntry *f, char *buffer, int max_length);
+
+extern struct _FlashHW flashObj;
 
 #endif /* INCLUDE_APP_PARSER_H */

@@ -217,12 +217,12 @@ static int s1d13524_pattern_check(struct pl_epdc *epdc, uint16_t size)
 	return s1d135xx_pattern_check(p, epdc->yres, epdc->xres, size, S1D13524_LD_IMG_8BPP);
 }
 
-static int s1d13524_load_image(struct pl_epdc *epdc, const char *path,
+static int s1d13524_load_image(struct pl_epdc *epdc, uint8_t id,
 			       const struct pl_area *area, int left, int top)
 {
 	struct s1d135xx *p = epdc->data;	// Typecasting generic pointer data to s1d135xx
 
-	return s1d135xx_load_image(p, path, S1D13524_LD_IMG_8BPP, 8, area,
+	return s1d135xx_load_image(p, id, S1D13524_LD_IMG_8BPP, 8, area,
 				   left, top);
 }
 

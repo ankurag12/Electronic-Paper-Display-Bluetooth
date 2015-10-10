@@ -21,7 +21,6 @@
 #include <stdio.h>
 #include "SPPDemo.h"
 
-#include "FatFs/ff.h"
 
 #define MAX_COMMAND_LENGTH                         (64)  /* Denotes the max   */
                                                          /* buffer size used  */
@@ -290,11 +289,9 @@ static void MainThread(void)
       /* to the scheduler.                                              */
       BTPS_AddFunctionToScheduler(CheckForRcvdCmd, NULL, 1);
       //if(BTPS_AddFunctionToScheduler(IdleFunction, NULL, 1))
-      {
-         /* Loop forever and execute the scheduler.                     */
-         while(1)
-            BTPS_ExecuteScheduler();
-      }
+
+      BTPS_ExecuteScheduler();
+
    }
 }
 
@@ -321,7 +318,7 @@ int main(void)
    MainThread();
 
    /* MainThread should run continously, if it exits an error occured.  */
-   //while(1)
+
    {
       HAL_LedToggle(0);
       BTPS_Delay(100);

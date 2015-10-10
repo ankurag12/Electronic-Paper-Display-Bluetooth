@@ -20,10 +20,10 @@
 #ifndef INCLUDE_UTIL_H
 #define INCLUDE_UTIL_H 1
 
-#include "../FatFs/ff.h"
 #include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "../FFIS/FlashFileIndexSystem.h"
 
 #ifdef LOG_TAG
 #define LOG(msg, ...) \
@@ -68,7 +68,7 @@ extern void mdelay(uint16_t ms);
 extern void msleep(uint16_t ms);
 
 /** Check for the presence of a file in FatFs */
-extern int is_file_present(const char *path);
+extern int is_file_present(uint8_t fileID);
 
 /* FatFS only supports 8.3 filenames, and we work from the current directory so
    paths should be short... */
@@ -77,12 +77,12 @@ extern int is_file_present(const char *path);
 extern int join_path(char *path, size_t n, const char *dir, const char *file);
 
 struct pnm_header;
-extern int open_image(const char *dir, const char *file, FIL *f,
-		      struct pnm_header *hrd);
 
 /* -- Debug utilities */
 
 /** Print the contents of a buffer with offsets on stdout */
 extern void dump_hex(const void *data, uint16_t len);
+
+extern FlashHW flashObj;
 
 #endif /* INCLUDE_UTIL_H */

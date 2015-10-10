@@ -29,8 +29,8 @@
 #define PNM_UTILS_H 1
 
 #include <stdint.h>
+#include "../FFIS/FlashFileIndexSystem.h"
 
-#include "../FatFs/ff.h"
 
 enum {
 	PNM_BITMAP,
@@ -50,8 +50,8 @@ struct pnm_header {
 		pnm_read_int32(_f, &_value);	\
 		(int)_value; })
 
-extern int pnm_read_header(FIL *pnm_file, struct pnm_header *hdr);
-extern int pnm_read_int32(FIL *pnm_file, int32_t *value);
+extern int pnm_read_header(fileIndexEntry *pnm_file, struct pnm_header *hdr);
+extern int pnm_read_int32(fileIndexEntry *pnm_file, int32_t *value);
 
 #define pnm_read_int_directstream(_d, _l) ({			\
 		int32_t _value;			\
@@ -60,5 +60,7 @@ extern int pnm_read_int32(FIL *pnm_file, int32_t *value);
 
 int pnm_read_header_directstream(unsigned char **dataPtr, unsigned int dataLen, struct pnm_header *hdr);
 int pnm_read_int32_directstream(unsigned char **data, unsigned int dataLen, int32_t *value);
+
+extern FlashHW flashObj;
 
 #endif /* PNM_UTILS_H */

@@ -30,7 +30,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "../FatFs/ff.h"
+#include "../FFIS/FlashFileIndexSystem.h"
 
 struct pl_wflib;
 struct i2c_eeprom;
@@ -46,9 +46,9 @@ struct pl_wflib {
 	void *priv;
 };
 
-/** Initialise a wflib interface for a FatFS file */
-extern int pl_wflib_init_fatfs(struct pl_wflib *wflib, FIL *f,
-			       const char *path);
+
+/** Initialise a wflib interface for a FFIS file */
+extern int pl_wflib_init_ffis(struct pl_wflib *wflib, uint8_t id);
 
 /** Structure to use to load LZSS-compressed waveform library from EEPROM */
 struct pl_wflib_eeprom_ctx {
@@ -62,5 +62,6 @@ extern int pl_wflib_init_eeprom(struct pl_wflib *wflib,
 				struct pl_wflib_eeprom_ctx *p,
 				const struct i2c_eeprom *eeprom,
 				const struct pl_dispinfo *dispinfo);
+extern FlashHW flashObj;
 
 #endif /* INCLUDE_PL_WFLIB_H */

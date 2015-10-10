@@ -25,7 +25,7 @@
  *   Andrew Cox <andrew.cox@plasticlogic.com>
  *
  */
-
+#include "../FFIS/FlashFileIndexSystem.h"
 #include "hwinfo.h"
 #include <stdint.h>
 
@@ -36,6 +36,7 @@
 
 #define LOG_TAG "hwinfo"
 #include "../epd_sys/utils.h"
+
 
 /* Set to 1 to enable verbose log messages */
 #define VERBOSE 0
@@ -91,6 +92,71 @@ int pl_hwinfo_init(struct pl_hwinfo *info, const struct i2c_eeprom *eeprom)
 
 	return 0;
 }
+
+
+int pl_hwinfo_init_flash(struct pl_hwinfo *info)
+{
+	struct pl_hw_vcom_info *vcom;
+	struct pl_hw_board_info *board;
+	uint16_t crc;
+	fileIndexEntry entry;
+	FFISretVal ret;
+	int br;
+
+	if(ret = fileCheckOut(&flashObj, (uint8_t)HWINFO_FILE_ID, &entry, READ)) {
+		LOG("Error (%d) in checking out HW Info file in read mode \r\n", ret);
+		return -1;
+	}
+
+	if (ret = fileRead(&flashObj, &entry, (uint8_t *)info, sizeof(*info), &br)) {
+		LOG("Error (%d) in reading HW Info file \r\n", ret);
+		return -1;
+	}
+
+	if(ret = fileCheckIn(&flashObj, &entry))
+		printf("Error (%d) in checking in HW Info file \r\n", ret);
+
+	crc = crc16_run(crc16_init, (const uint8_t *)info,
+			(sizeof(info->version) + sizeof(info->vcom) +
+			 sizeof(info->board)));
+#if CONFIG_LITTLE_ENDIAN
+	swap16(&info->crc);
+#endif
+
+	if (crc != info->crc) {
+		LOG("CRC mismatch: %04X instead of %04X", crc, info->crc);
+		return -1;
+	}
+
+	if (info->version != PL_HWINFO_VERSION) {
+		LOG("Unsupported version number: %d, required version is %d",
+		    info->version, PL_HWINFO_VERSION);
+		return -1;
+	}
+
+	vcom = &info->vcom;
+	board = &info->board;
+	board->board_type[8] = '\0';
+
+#if CONFIG_LITTLE_ENDIAN
+	{
+		int16_t *data16[] = {
+			&vcom->dac_x1, &vcom->dac_y1,
+			&vcom->dac_x2, &vcom->dac_y2,
+			&board->adc_scale_1, &board->adc_scale_2,
+		};
+		int32_t *data32[] = {
+			&vcom->vgpos_mv, &vcom->vgneg_mv, &vcom->swing_ideal,
+		};
+
+		swap16_array(data16, ARRAY_SIZE(data16));
+		swap32_array(data32, ARRAY_SIZE(data32));
+	}
+#endif
+
+	return 0;
+}
+
 
 void pl_hwinfo_log(const struct pl_hwinfo *info)
 {

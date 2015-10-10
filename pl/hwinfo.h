@@ -30,6 +30,7 @@
 #define INCLUDE_PL_HWINFO_H 1
 
 #include <stdint.h>
+#include "../FFIS/FlashFileIndexSystem.h"
 
 /** Version of the VCOM PSU EEPROM format */
 #define PL_HWINFO_VERSION 1
@@ -96,12 +97,15 @@ struct __attribute__((__packed__)) pl_hwinfo {
 	uint16_t crc;
 };
 
-#if CONFIG_HWINFO_EEPROM
+//#if CONFIG_HWINFO_EEPROM
 struct i2c_eeprom;
 extern int pl_hwinfo_init(struct pl_hwinfo *info,
 			   const struct i2c_eeprom *eeprom);
-#endif
+//#endif
 
+extern int pl_hwinfo_init_flash(struct pl_hwinfo *info);
 extern void pl_hwinfo_log(const struct pl_hwinfo *info);
+
+extern FlashHW flashObj;
 
 #endif /* INCLUDE_PL_HWINFO_H */

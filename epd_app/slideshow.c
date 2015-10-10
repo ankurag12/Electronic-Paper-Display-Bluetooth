@@ -37,122 +37,13 @@
 #include "../epd_sys/utils.h"
 #include "slideshow.h"
 
-static DIR dir;
-static FILINFO f;
-static int dir_open = 0;
-static int cmd_next = 0;
+//static int cmd_next = 0;
 
 
-/* -- public entry point -- */
-
-int app_slideshow(struct pl_platform *plat, const char *path)
-{
-
-	assert(plat != NULL);
-	assert(path != NULL);
-
-	LOG("Running slideshow");
-
-	while (1) {
-		if (!dir_open) {
-			/* (re-)open the directory */
-			if (f_opendir(&dir, path) != FR_OK) {
-				LOG("Failed to open directory [%s]", path);
-				return -1;
-			}
-
-			dir_open = 1;
-		}
-
-		/* read next entry in the directory */
-		if (f_readdir(&dir, &f) != FR_OK) {
-			LOG("Failed to read directory entry");
-			return -1;
-		}
-
-		/* end of the directory reached */
-		if (f.fname[0] == '\0') {
-			dir_open = 0;
-			continue;
-		}
-
-		/* skip directories */
-		if ((f.fname[0] == '.') || (f.fattrib & AM_DIR)){
-			continue;
-		}
-
-		/* only show PGM files */
-		if (!strstr(f.fname, ".PGM")){
-			continue;
-		}
-
-		if (show_image(plat, path, f.fname)) {
-			LOG("Failed to show image");
-			return -1;
-		}
-	}
-
-	return 0;
-}
-
-
-int app_slideshow_with_spacebar(struct pl_platform *plat, const char *path, int show_next)
-{
-
-	assert(plat != NULL);
-	assert(path != NULL);
-
-	// LOG("Running slideshow ");
-
-	while (show_next) {
-		if (!dir_open) {
-			/* (re-)open the directory */
-			if (f_opendir(&dir, path) != FR_OK) {
-				LOG("Failed to open directory [%s]", path);
-				return -1;
-			}
-
-			dir_open = 1;
-		}
-
-		/* read next entry in the directory */
-		if (f_readdir(&dir, &f) != FR_OK) {
-			LOG("Failed to read directory entry");
-			return -1;
-		}
-
-		/* end of the directory reached */
-		if (f.fname[0] == '\0') {
-			dir_open = 0;
-			continue;
-		}
-
-		/* skip directories */
-		if ((f.fname[0] == '.') || (f.fattrib & AM_DIR))
-			continue;
-
-		/* only show PGM files */
-		if (!strstr(f.fname, ".PGM"))
-			continue;
-
-		if (show_image(plat, path, f.fname)) {
-			LOG("Failed to show image");
-			return -1;
-		}
-
-		show_next=0;
-	}
-
-	return 0;
-}
-
-
-int show_image(struct pl_platform *plat, const char *dir,
-		      const char *file)
+int show_image(struct pl_platform *plat, uint8_t id)
 {
 	struct pl_epdc *epdc = &plat->epdc;
 	struct pl_epdpsu *psu = &plat->psu;
-	char path[MAX_PATH_LEN];
 	int wfid;
 
 	wfid = pl_epdc_get_wfid(epdc, wf_refresh);
@@ -160,10 +51,8 @@ int show_image(struct pl_platform *plat, const char *dir,
 	if (wfid < 0)
 		return -1;
 
-	if (join_path(path, sizeof(path), dir, file))
-		return -1;
 
-	if (epdc->load_image(epdc, path, NULL, 0, 0))
+	if (epdc->load_image(epdc, id, NULL, 0, 0))
 		return -1;
 
 	if (epdc->update_temp(epdc))

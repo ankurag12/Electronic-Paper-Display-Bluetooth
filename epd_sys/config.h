@@ -28,13 +28,13 @@
 #define CONFIG_LITTLE_ENDIAN          1
 
 /** Set to 1 to use the VCOM and hardware info stored in board EEPROM */
-#define CONFIG_HWINFO_EEPROM          1
+//#define CONFIG_HWINFO_EEPROM          1
 
 /** Set to 1 to use default VCOM calibration settings if HW info EEPROM data
  * cannot be used (either not programmed, or hardware fault, or
  * CONFIG_HWINFO_EEPROM is not defined).  If set to 0, the system will not be
  * able to work without valid EEPROM data.  */
-#define CONFIG_HWINFO_DEFAULT         1
+//#define CONFIG_HWINFO_DEFAULT         1
 
 /** Set one of the following to 1 to manually select the platform.
  * This will be used if no platform can be discovered at runtime.  */
@@ -55,13 +55,16 @@
  * should be read from: */
 #define CONFIG_DISP_DATA_EEPROM_ONLY  0 /**< Only use display EEPROM */
 #define CONFIG_DISP_DATA_SD_ONLY      0 /**< Only use SD card */
-#define CONFIG_DISP_DATA_EEPROM_SD    1 /**< Try EEPROM first, then SD card */
+#define CONFIG_DISP_DATA_EEPROM_SD    0 /**< Try EEPROM first, then SD card */
 #define CONFIG_DISP_DATA_SD_EEPROM    0 /**< Try SD card first, then EEPROM */
+#define CONFIG_DISP_DATA_EEPROM_FLASH    1 /**< Try EEPROM first, then SPI Flash*/
 
 /** Set this to manually specify the display type when it could not be detected
  * at run-time.  This is especially useful for displays without an EEPROM such
  * as Type19.  */
 #define CONFIG_DISPLAY_TYPE           "Type11"
+/* Root path on the SD card */
+#define ROOT_SD_PATH "0:"
 
 /** Set to 1 to use the power state transition demo rather than the slideshow */
 #define CONFIG_DEMO_POWERMODES        0
@@ -73,6 +76,17 @@
 #define CONFIG_DEMO_NEXT_SLIDE_WITH_SPACEBAR		0
 
 /** Set to 1 to have stdout, stderr sent to serial port */
-#define CONFIG_UART_PRINTF		1
+#define CONFIG_UART_PRINTF		0
+
+#define SAVE_IMG_ON_EXT_FLASH	1
+
+enum fileIDs {
+	ECODE_FILE_ID 			=	(1),
+	VCOM_FILE_ID 			=	(2),
+	WAVEFORM_FILE_ID 		=	(3),
+	HWINFO_FILE_ID			=	(4),
+	REG_OVERRIDE_FILE_ID	=	(5),
+	RECEIVED_IMG_FILE_ID 	=	(6)
+};
 
 #endif /* INCLUDE_CONFIG_H */

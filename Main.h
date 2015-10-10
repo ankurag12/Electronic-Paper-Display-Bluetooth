@@ -19,6 +19,7 @@
 #include "SS1BTVS.h"             /* Vendor Specific Prototypes/Constants.     */
 #include "BTPSKRNL.h"            /* BTPS Kernel Prototypes/Constants.         */
 #include "pl/platform.h"
+#include "FFIS/FlashFileIndexSystem.h"
 
    /* The following is used as a printf replacement.                    */
 #define Display(_x)                 do { BTPS_OutputMessage _x; } while(0)
@@ -47,7 +48,6 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
 Boolean_t ProcessCommandLine(char *String);
 
 
-extern struct pl_platform g_plat;		// Defined in msp430-epd.c
 
 #endif
 

@@ -29,6 +29,7 @@
 #define INCLUDE_PL_DISPINFO_H 1
 
 #include <stdint.h>
+#include "../FFIS/FlashFileIndexSystem.h"
 
 struct i2c_eeprom;
 
@@ -67,7 +68,10 @@ extern int pl_dispinfo_init_eeprom(struct pl_dispinfo *p,
 /** Initialise the pl_dispinfo structure from the SD card */
 extern int pl_dispinfo_init_fatfs(struct pl_dispinfo *p);
 
+/** Initialise the pl_dispinfo structure from the SPI Flash*/
+extern int pl_dispinfo_init_ffis(struct pl_dispinfo *p);
 /** Log the display data */
 extern void pl_dispinfo_log(const struct pl_dispinfo *p);
+extern FlashHW flashObj;
 
 #endif /* INCLUDE_PL_DISPINFO_H */

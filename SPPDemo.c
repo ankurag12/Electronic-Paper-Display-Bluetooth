@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include "epd_app/app.h"
 #include "epd_app/slideshow.h"
+#include "epd_sys/config.h"
+
+#include <stdio.h>
 
 #define MAX_SUPPORTED_COMMANDS                     (36)  /* Denotes the       */
                                                          /* maximum number of */
@@ -140,8 +143,6 @@
 #define ACK_STRING								"1\r\n"
 #define ERR_STRING								"2\r\n"
 
-
-//#define SAVE_IMG_ON_EXT_FLASH
 
 typedef struct _tagLinkKeyInfo_t
 {
@@ -4484,22 +4485,19 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
 int ReadCmdFromPhoneApp()
 {
 	static int ret_val = -1;
-	static FIL fil;
-	static FRESULT fr;
-	static UINT bw;
 	static Data_Packet_Type_t dataPacketType;
 	static Data_Packet_Comp_t dataPacketComp;
 	static int dataPacketLength;
 	static unsigned char * dataPacketPayloadPtr;
 	//static unsigned char * fileBytesUncomp = NULL;
-	static DIR dir;
-	static int dir_open = 0;
-	static const char fileName[] = "RCVDFILE.PGM";
-	static const char path[] = "/Type11/Rcvd";
 	static int i=0;
 	static int j=0;
 	static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
 	static int ctr=0;
+	static uint8_t fileID;
+	static int bw, br;
+	static fileIndexEntry newEntry;
+	static FFISretVal ret;
 
 	//Display(("%d\r\n",ctr++));
 
@@ -4522,12 +4520,9 @@ int ReadCmdFromPhoneApp()
 					Display(("Baudrate upgrade to 921600 failed \r\n"));
 
 
-#ifdef SAVE_IMG_ON_EXT_FLASH
-				if (f_chdir(path) != FR_OK) {
-					Display(("Failed to change directory [%s]", path));
-					return -1;
-				}
-				fr = f_open(&fil, fileName, FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
+#if SAVE_IMG_ON_EXT_FLASH
+				if(ret = fileCheckOut(&flashObj, RECEIVED_IMG_FILE_ID, &newEntry, WRITE))
+					Display(("Error (%d) in checking out received file in write mode \r\n", ret));
 #endif
 
 				BTPS_Delay(20);
@@ -4536,19 +4531,18 @@ int ReadCmdFromPhoneApp()
 
 			case PNM_FILE_HEADER:
 
-#ifdef SAVE_IMG_ON_EXT_FLASH
-				fr = f_write(&fil, dataPacketPayloadPtr, dataPacketLength, &bw);
-				if(fr != FR_OK || bw!=dataPacketLength) {
-					Display(("Error in writing on flash"));
-					Write(ERR_STRING);
-					break;
-				}
+#if SAVE_IMG_ON_EXT_FLASH
+				ret = fileWrite(&flashObj, &newEntry, dataPacketPayloadPtr, dataPacketLength, &bw);
+				if((ret != FFIS_OK) || (bw != dataPacketLength))
+					Display(("Error (%d) in writing received file on flash \r\n", ret));
 #endif
 
 				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, HEADER)) {
 					Display(("Some issue in initializing file streaming \r\n"));
 					break;
 				}
+
+
 
 				Write(ACK_STRING);
 				break;
@@ -4575,21 +4569,19 @@ int ReadCmdFromPhoneApp()
 						return -1;
 				}
 
-#ifdef SAVE_IMG_ON_EXT_FLASH
-				fr = f_write(&fil, fileBytesUncomp, dataPacketLength, &bw);
-				if(fr != FR_OK || bw!=dataPacketLength) {
-					Display(("Error in writing on flash"));
-					Write(ERR_STRING);
-					break;
-				}
-#endif
-
 
 				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, BODY)) {
-					Display(("Some issue in receving file body"));
+					Display(("Some issue in receving file body \r\n"));
 					Write(ERR_STRING);
 					break;
 				}
+
+#if SAVE_IMG_ON_EXT_FLASH
+				ret = fileWrite(&flashObj, &newEntry, fileBytesUncomp, dataPacketLength, &bw);
+				if((ret != FFIS_OK) || (bw != dataPacketLength))
+					Display(("Error (%d) in writing received file on flash \r\n", ret));
+#endif
+
 
 				//free(fileBytesUncomp);
 				Write(ACK_STRING);
@@ -4597,35 +4589,31 @@ int ReadCmdFromPhoneApp()
 
 			case CMD_END_OF_FILE:
 
-#ifdef SAVE_IMG_ON_EXT_FLASH
-				if(f_close(&fil) != FR_OK) {
-					Display(("Error in closing file"));
-					break;
-				}
-#endif
+
 				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, FINISH)) {
 					Display(("Some issue in finishing file streaming \r\n"));
 					break;
 				}
+
+#if SAVE_IMG_ON_EXT_FLASH
+				if(ret = fileCheckIn(&flashObj, &newEntry))
+					Display(("Error (%d) in checking in received file \r\n", ret));
+#endif
+
+
 				Display(("done!\r\n"));
 				Write(ACK_STRING);
 				break;
 
 			case CMD_UNMOUNT_SDCARD:
-				//f_mount(NULL,&sdcard);
+
 				break;
 
 			case CMD_DISPLAY_IMAGE:
-				if (!dir_open) {
-					 //(re-)open the directory
-					if (f_opendir(&dir, path) != FR_OK) {
-						Display(("Failed to open directory [%s] \r\n", path));
-						return -1;
-					}
-					dir_open = 1;
-				}
+
+				fileID = (uint8_t)(*dataPacketPayloadPtr+0);
 				app_clear(&g_plat);
-				if (show_image(&g_plat, path, fileName)) {
+				if (show_image(&g_plat, fileID)) {
 					Display(("Failed to show image\r\n"));
 					return -1;
 				}
@@ -4634,6 +4622,7 @@ int ReadCmdFromPhoneApp()
 
 			default :
 				Display(("Unknown data packet ID \r\n"));
+
 /*				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)115200))
 					Display(("Baudrate setting to default 115200 failed \r\n"));
 				if(HCI_Write_Link_Policy_Settings(BluetoothStackID, Connection_Handle, HCI_LINK_POLICY_SETTINGS_ENABLE_MASTER_SLAVE_SWITCH|HCI_LINK_POLICY_SETTINGS_ENABLE_HOLD_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_PARK_MODE, &StatusResult, &Connection_HandleResult))

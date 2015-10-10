@@ -84,9 +84,9 @@ static int get_hrdy(struct s1d135xx *p);
 static int do_fill(struct s1d135xx *p, const struct pl_area *area,
 		   unsigned bpp, uint8_t g);
 static int wflib_wr(void *ctx, const uint8_t *data, size_t n);
-static int transfer_file(FIL *file);
+static int transfer_file_ffis(fileIndexEntry *file);
 static int transfer_file_directstream(unsigned char **dataPtr, unsigned int dataLen);
-static int transfer_image(FIL *f, const struct pl_area *area, int left,
+static int transfer_image_ffis(fileIndexEntry *f, const struct pl_area *area, int left,
 			  int top, int width);
 static void transfer_data(const uint8_t *data, size_t n);
 static void send_cmd_area(struct s1d135xx *p, uint16_t cmd, uint16_t mode,
@@ -141,22 +141,24 @@ int s1d135xx_check_prod_code(struct s1d135xx *p, uint16_t ref_code)
 
 int s1d135xx_load_init_code(struct s1d135xx *p)
 {
-	static const char init_code_path[] = "bin/Ecode.bin";
-	FIL init_code_file;
+
+	fileIndexEntry init_code_file;
 	uint16_t checksum;
 	int stat;
 
-	if (f_open(&init_code_file, init_code_path, FA_READ) != FR_OK)
-		return -1;
+	if (fileCheckOut(&flashObj, ECODE_FILE_ID, &init_code_file, READ))
+			return -1;
+
 
 	if (s1d135xx_wait_idle(p))
 		return -1;
 
 	set_cs(p, 0);
 	send_cmd(p, S1D135XX_CMD_INIT_SET);
-	stat = transfer_file(&init_code_file);
+	stat = transfer_file_ffis(&init_code_file);
 	set_cs(p, 1);
-	f_close(&init_code_file);
+
+	fileCheckIn(&flashObj, &init_code_file);
 
 	if (stat) {
 		LOG("Failed to transfer init code file");
@@ -184,6 +186,7 @@ int s1d135xx_load_init_code(struct s1d135xx *p)
 
 	return 0;
 }
+
 
 int s1d135xx_load_wflib(struct s1d135xx *p, struct pl_wflib *wflib,
 			uint32_t addr)
@@ -299,16 +302,19 @@ int s1d135xx_pattern_check(struct s1d135xx *p, uint16_t height, uint16_t width, 
 	return 0;
 }
 
-int s1d135xx_load_image(struct s1d135xx *p, const char *path, uint16_t mode,
+int s1d135xx_load_image(struct s1d135xx *p, uint8_t id, uint16_t mode,
 			unsigned bpp, const struct pl_area *area, int left,
 			int top)
 {
 	struct pnm_header hdr;
-	FIL img_file;
+	fileIndexEntry img_file;
 	int stat;
+	FFISretVal ret;
 
-	if (f_open(&img_file, path, FA_READ) != FR_OK)
+	if (ret = fileCheckOut(&flashObj, id, &img_file, READ)) {
+		LOG("Error (%d) in checking out image file in read mode \r\n", ret);
 		return -1;
+	}
 
 	if (pnm_read_header(&img_file, &hdr))
 		return -1;
@@ -332,12 +338,13 @@ int s1d135xx_load_image(struct s1d135xx *p, const char *path, uint16_t mode,
 	send_param(S1D135XX_REG_HOST_MEM_PORT);
 
 	if (area == NULL)
-		stat = transfer_file(&img_file);
+		stat = transfer_file_ffis(&img_file);
 	else
-		stat = transfer_image(&img_file, area, left, top, hdr.width);
+		stat = transfer_image_ffis(&img_file, area, left, top, hdr.width);
 
 	set_cs(p, 1);
-	f_close(&img_file);
+
+	fileCheckIn(&flashObj, &img_file);
 
 	if (stat)
 		return -1;
@@ -361,9 +368,6 @@ int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr
 		case HEADER:
 		{
 			struct pnm_header hdr;
-			//FIL img_file;
-			// if (f_open(&img_file, path, FA_READ) != FR_OK)
-			//	return -1;
 
 			if (pnm_read_header_directstream(dataPtr, dataLen, &hdr))
 				return -1;
@@ -578,18 +582,19 @@ void s1d135xx_write_reg(struct s1d135xx *p, uint16_t reg, uint16_t val)
 
 int s1d135xx_load_register_overrides(struct s1d135xx *p)
 {
-	static const char override_path[] = "bin/override.txt";
 	static const char sep[] = ", ";
-	FIL file;
-	FRESULT res;
+
 	int stat;
 	uint16_t reg, val;
 
-	res = f_open(&file, override_path, FA_READ);
-	if (res != FR_OK) {
-		if (res == FR_NO_FILE) {
+	fileIndexEntry file;
+	FFISretVal ret;
+
+	ret = fileCheckOut(&flashObj, REG_OVERRIDE_FILE_ID, &file, READ);
+
+	if(ret != FFIS_OK) {
+		if (ret == FILE_DOES_NOT_EXIST)
 			return 0;
-		}
 		else {
 			LOG("Failed to open register override file");
 			return -1;
@@ -600,7 +605,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 	while (!stat) {
 		char line[81];
 		int len;
-		stat = parser_read_file_line(&file, line, sizeof(line));
+		stat = parser_read_ffis_file_line(&file, line, sizeof(line));
 		if (stat < 0) {
 			LOG("Failed to read line");
 			break;
@@ -632,7 +637,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 		}
 	}
 
-	f_close(&file);
+	fileCheckIn(&flashObj, &file);
 
 	return stat;
 }
@@ -721,15 +726,18 @@ static int wflib_wr(void *ctx, const uint8_t *data, size_t n)
 	return 0;
 }
 
-static int transfer_file(FIL *file)
+static int transfer_file_ffis(fileIndexEntry *file)
 {
 	uint8_t data[DATA_BUFFER_LENGTH];
+	FFISretVal ret;
 
 	for (;;) {
-		size_t count;
+		int count;
 
-		if (f_read(file, data, sizeof(data), &count) != FR_OK)
+		if (ret = fileRead(&flashObj, file, data, sizeof(data), &count)) {
+			LOG("Error (%d) in reading from image file on flash \r\n", ret);
 			return -1;
+		}
 
 		if (!count)
 			break;
@@ -748,48 +756,11 @@ static int transfer_file_directstream(unsigned char **dataPtr, unsigned int data
 	return 0;
 }
 
-static int transfer_image(FIL *f, const struct pl_area *area, int left,
+static int transfer_image_ffis(fileIndexEntry *f, const struct pl_area *area, int left,
 			  int top, int width)
 {
-	uint8_t data[DATA_BUFFER_LENGTH];
-	size_t line;
-
-	/* Simple bounds check */
-	if (width < area->width || width < (left + area->width)) {
-		LOG("Invalid combination of width/left/area");
-		return -1;
-	}
-
-	if (f_lseek(f, f->fptr + ((long)top * (unsigned long)width)) != FR_OK)
-		return -1;
-
-	for (line = area->height; line; --line) {
-		size_t count;
-		size_t remaining = area->width;
-
-		/* Find the first relevant pixel (byte) on this line */
-		if (f_lseek(f, f->fptr + (unsigned long)left) != FR_OK)
-			return -1;
-
-		/* Transfer data of interest in chunks */
-		while (remaining) {
-			size_t btr = (remaining <= DATA_BUFFER_LENGTH) ?
-					remaining : DATA_BUFFER_LENGTH;
-
-			if (f_read(f, data, btr, &count) != FR_OK)
-				return -1;
-
-			transfer_data(&data[0], btr);
-
-			remaining -= btr;
-		}
-
-		/* Move file pointer to end of line */
-		if (f_lseek(f, f->fptr + (width - (left + area->width))) != FR_OK)
-			return -1;
-	}
-
-	return 0;
+	// Not implemented
+	return -1;
 }
 
 static void transfer_data(const uint8_t *data, size_t n)

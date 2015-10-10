@@ -63,15 +63,11 @@ __interrupt void USCI_ISR(void)
 
 int msp430_uart_getc(void)
 {
-	//while(1){}
-	//LOG("I am here 1");
-	//return (97);
+
 	while (init_done && !(UCxnIFG & UCRXIFG));
-		//LOG("I am here 2");
+
 	return (UCxnRXBUF);
 
-	//LOG("I am here 3");
-	//return -1;
 }
 
 int msp430_uart_putc(int c)
@@ -268,15 +264,11 @@ int msp430_uart_read(int dev_fd, char *buf, unsigned count)
 {
 	unsigned int i;
 
-	//while(1){}
-	//LOG("I am here 3.5");
 
 	if (!init_done)
 		return -1;
-	//LOG("I am here 4");
 
 	for(i = 0; i < count; i++){
-		LOG("I am here 5");
 		buf[i]=msp430_uart_getc();
 	}
 

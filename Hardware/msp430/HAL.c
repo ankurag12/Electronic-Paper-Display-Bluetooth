@@ -19,6 +19,7 @@
 #include "BTPSKRNL.h"
 #include <stdio.h>
 #include "msp430-uart.h"
+#include "../../epd_sys/config.h"
 
 #define BTPS_MSP430_DEFAULT_BAUD           115200L  /* Default UART Baud Rate*/
                                                     /* used in baud rate     */
@@ -780,8 +781,11 @@ void HAL_CommConfigure(unsigned char *UartBase, unsigned long BaudRate, unsigned
    /* now clear the UCA2 Software Reset bit                             */
    HWREG8(UartBase + MSP430_UART_CTL1_OFFSET) &= (~(MSP430_UART_CTL1_SWRST));
 
+#if CONFIG_UART_PRINTF
    // Added from Plastic Logic code to use "LOG" function
    msp430_uart_register_files();
+#endif
+
 }
 
 

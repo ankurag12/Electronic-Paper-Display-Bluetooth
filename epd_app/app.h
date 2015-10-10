@@ -29,12 +29,13 @@
 
 //struct pl_platform;
 #include "../pl/platform.h"
+#include <stdint.h>
 
 extern int app_stop;
 
 extern int app_demo(struct pl_platform *plat);
 extern int app_clear(struct pl_platform *plat);
-extern int app_power(struct pl_platform *plat, const char *path);
+extern int app_power(struct pl_platform *plat, uint8_t fileID);
 extern int app_slideshow(struct pl_platform *plat, const char *path);
 extern int app_sequencer(struct pl_platform *plat, const char *path);
 extern int app_pattern(struct pl_platform *plat);

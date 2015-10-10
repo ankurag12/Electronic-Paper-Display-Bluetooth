@@ -24,13 +24,14 @@
  *  Guillaume Tucker <guillaume.tucker@plasticlogic.com>
  *
  */
+#include "../../FFIS/FlashFileIndexSystem.h"
+#include "../../FFIS/FFIS_HAL.h"
 #include "../../epson/epson-s1d135xx.h"
 #include "../../pl/platform.h"
 #include "../../pl/gpio.h"
 #include "../../pl/hwinfo.h"
 #include "../../pl/wflib.h"
 #include "../../epd_app/app.h"
-#include "../../FatFs/ff.h"
 #include <stdio.h>
 #include "../../epd_sys/i2c-eeprom.h"
 #include "../../epd_sys/vcom.h"
@@ -43,8 +44,9 @@
 #include "msp430-sdcard.h"
 #include "msp430-spi.h"
 #include "msp430-uart.h"
+#include "../../epd_app/slideshow.h"
 
-#define LOG_TAG "main"
+#define LOG_TAG "msp430-epd"
 #include "../../epd_sys/utils.h"
 
 #include "../../Main.h"
@@ -83,8 +85,8 @@ static const char VERSION[] = "v008";
 
 /* Platform instance, to be passed to other modules */
 struct pl_platform g_plat;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
-
-static FATFS sdcard;				// GLOBAL !!
+				//
+FlashHW flashObj;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
 
 /* --- System GPIOs --- */
 
@@ -227,7 +229,7 @@ static const struct s1d135xx_data g_s1d135xx_data = {
 
 /* --- hardware info --- */
 
-#if CONFIG_HWINFO_DEFAULT
+//#if CONFIG_HWINFO_DEFAULT
 
 #if CONFIG_PLAT_Z6
 #define BOARD_MAJ 6
@@ -261,20 +263,11 @@ static const struct pl_hwinfo g_hwinfo_default = {
 
 #define HWINFO_DEFAULT (&g_hwinfo_default)
 
-#else /* !CONFIG_HWINFO_DEFAULT */
-#define HWINFO_DEFAULT (NULL)
+//#else /* !CONFIG_HWINFO_DEFAULT */
+//#define HWINFO_DEFAULT (NULL)
 
-#endif /* CONFIG_HWINFO_DEFAULT */
+//#endif /* CONFIG_HWINFO_DEFAULT */
 
-/* --- waveform library and display info --- */
-
-#if CONFIG_PLAT_RAVEN
-    static const char g_wflib_fatfs_path[] = "display/waveform.wbf";
-#else
-    static const char g_wflib_fatfs_path[] = "display/waveform.bin";
-#endif
-
-static FIL g_wflib_fatfs_file;
 
 /* --- main --- */
 
@@ -282,17 +275,17 @@ void epd_sys_init(void)
 {
 	struct pl_i2c host_i2c;
 	struct pl_i2c disp_i2c;
-#if CONFIG_HWINFO_EEPROM
+//#if CONFIG_HWINFO_EEPROM
 	const struct i2c_eeprom hw_eeprom = {
 		&host_i2c, I2C_HWINFO_EEPROM_ADDR, EEPROM_24LC014,
 	};
-#endif
+//#endif
 	struct i2c_eeprom disp_eeprom = {
 		NULL, I2C_DISPINFO_EEPROM_ADDR, EEPROM_24AA256
 	};
-#if CONFIG_HWINFO_EEPROM
-	struct pl_hwinfo hwinfo_eeprom;
-#endif
+//#if CONFIG_HWINFO_EEPROM
+	struct pl_hwinfo hwinfo_nvm;
+//#endif
 	struct pl_wflib_eeprom_ctx wflib_eeprom_ctx;
 	struct pl_dispinfo dispinfo;
 	struct vcom_cal vcom_cal;
@@ -348,22 +341,25 @@ void epd_sys_init(void)
 	if (spi_init(&g_plat.gpio, SPI_CHANNEL, SPI_DIVISOR))
 		abort_msg("SPI init failed", ABORT_MSP430_COMMS_INIT);
 
-	/* initialise SD-card */
-	SDCard_plat = &g_plat;
-	f_chdrive(0);
-	if (f_mount(0, &sdcard) != FR_OK)
-		abort_msg("SD card init failed", ABORT_MSP430_COMMS_INIT);
+
+	/*  Initialize  Flash File Index System */
+	if(FFIS_init(&flashObj))
+		abort_msg("FFIS init Failed", ABORT_MSP430_COMMS_INIT);
 
 	/* load hardware information */
-#if CONFIG_HWINFO_EEPROM
-	if (probe_hwinfo(&g_plat, &hw_eeprom, &hwinfo_eeprom, HWINFO_DEFAULT))
+//#if CONFIG_HWINFO_EEPROM
+	if (probe_hwinfo(&g_plat, &hw_eeprom, &hwinfo_nvm, HWINFO_DEFAULT))
 		abort_msg("hwinfo probe failed", ABORT_HWINFO);
+/*
+#elif CONFIG_HWINFO_FLASH
+
 #elif CONFIG_HWINFO_DEFAULT
 	LOG("Using default hwinfo");
 	g_plat.hwinfo = &g_hwinfo_default;
 #else
 #error "Invalid hwinfo build configuration, check CONFIG_HWINFO_ options"
 #endif
+*/
 	pl_hwinfo_log(g_plat.hwinfo);
 
 	/* initialise platform I2C bus */
@@ -372,8 +368,7 @@ void epd_sys_init(void)
 
 	/* load display information */
 	disp_eeprom.i2c = g_plat.i2c;
-	if (probe_dispinfo(&dispinfo, &g_plat.epdc.wflib, &g_wflib_fatfs_file,
-			   g_wflib_fatfs_path, &disp_eeprom,
+	if (probe_dispinfo(&dispinfo, &g_plat.epdc.wflib, &disp_eeprom,
 			   &wflib_eeprom_ctx))
 		abort_msg("Failed to load dispinfo", ABORT_DISP_INFO);
 	g_plat.dispinfo = &dispinfo;
@@ -388,23 +383,15 @@ void epd_sys_init(void)
 		abort_msg("EPDC init failed", ABORT_EPDC_INIT);
 
 	/* run the application */
-
+	app_clear(&g_plat);			//TEMPORARY!!
+	if (show_image(&g_plat, RECEIVED_IMG_FILE_ID)) {
+		LOG("Failed to show saved image\r\n");
+	}
 	//msp430_uart_write(1,"Hello World",11);		// TEST FOR UART
-	 app_clear(&g_plat);			//TEMPORARY!!
+
 	//app_slideshow(&g_plat,"img");
 	//if (app_demo(&g_plat))
 	//	abort_msg("Application failed", ABORT_APPLICATION);
-
-/*	FIL fil;
-	FRESULT fr;
-	UINT bw;
-	BYTE buffer[10];
-	fr = f_open(&fil, "test3.txt", FA_CREATE_ALWAYS | FA_WRITE | FA_READ);
-	fr = f_write(&fil, "++AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", 255, &bw);
-
-	f_close(&fil);
-	f_mount(NULL,&sdcard);
-	LOG("Written");*/
 
 }
 

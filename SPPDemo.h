@@ -15,9 +15,13 @@
 #ifndef __SPPDEMO_H__
 #define __SPPDEMO_H__
 
-#include "FatFs/ff.h"
+#include "FFIS/FlashFileIndexSystem.h"
+#include "pl/platform.h"
+
+extern struct _FlashHW flashObj;		// Defined in msp430-epd.c
+extern struct pl_platform g_plat;		// Defined in msp430-epd.c
+
 int ReadCmdFromPhoneApp();
 
-extern FATFS sdcard;
 #endif
 

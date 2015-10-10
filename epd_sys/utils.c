@@ -29,7 +29,6 @@
 #include "../Hardware/msp430/msp430-gpio.h"
 #include <stdlib.h>
 #include <stdio.h>
-#include "../FatFs/ff.h"
 #include "../epd_sys/pnm-utils.h"
 #include "../pl/endian.h"
 #include "../pl/types.h"
@@ -70,45 +69,18 @@ void swap16_array(int16_t **x, uint16_t n)
 		swap16(*x++);
 }
 
-int is_file_present(const char *path)
+int is_file_present(uint8_t id)
 {
-	FIL f;
+	fileIndexEntry f;
 
-	if (f_open(&f, path, FA_READ) != FR_OK)
+	if (fileCheckOut(&flashObj, id, &f, READ) != FFIS_OK)
 		return 0;
 
-	f_close(&f);
+	fileCheckIn(&flashObj, &f);
 
 	return 1;
 }
 
-int join_path(char *path, size_t n, const char *dir, const char *file)
-{
-	return (snprintf(path, n, "%s/%s", dir, file) >= n) ? -1 : 0;
-}
-
-int open_image(const char *dir, const char *file, FIL *f,
-	       struct pnm_header *hdr)
-{
-	char path[MAX_PATH_LEN];
-
-	if (snprintf(path, MAX_PATH_LEN, "%s/%s", dir, file) >= MAX_PATH_LEN) {
-		LOG("File path is too long, max=%d", MAX_PATH_LEN);
-		return -1;
-	}
-
-	if (f_open(f, path, FA_READ) != FR_OK) {
-		LOG("Failed to open image file");
-		return -1;
-	}
-
-	if (pnm_read_header(f, hdr) < 0) {
-		LOG("Failed to parse PGM header");
-		return -1;
-	}
-
-	return 0;
-}
 
 /* ----------------------------------------------------------------------------
  * Debug utilies

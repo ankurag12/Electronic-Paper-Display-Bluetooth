@@ -25,6 +25,7 @@
  */
 
 #include "../epd_app/parser.h"
+#include "../FFIS/FlashFileIndexSystem.h"
 
 #include <stdlib.h>
 
@@ -120,14 +121,15 @@ int parser_read_area(const char *str, const char *sep, struct pl_area *a)
 	return parser_read_int_list(str, sep, coords);
 }
 
-int parser_read_file_line(FIL *f, char *buffer, int max_length)
+
+int parser_read_ffis_file_line(fileIndexEntry *f, char *buffer, int max_length)
 {
-	size_t count;
+	int count;
 	char *out;
 	int i;
 
 	for (i = 0, out = buffer; i < max_length; ++i, ++out) {
-		if (f_read(f, out, 1, &count) != FR_OK)
+		if (fileRead(&flashObj, f, (uint8_t*)out, 1, &count) != FFIS_OK)
 			return -1;
 
 		if ((*out == '\n') || !count)

@@ -179,12 +179,12 @@ static int s1d13541_pattern_check(struct pl_epdc *epdc, uint16_t size)
 }
 
 
-static int s1d13541_load_image(struct pl_epdc *epdc, const char *path,
+static int s1d13541_load_image(struct pl_epdc *epdc, uint8_t id,
 			       const struct pl_area *area, int left, int top)
 {
 	struct s1d135xx *p = epdc->data;
 
-	return s1d135xx_load_image(p, path, S1D13541_LD_IMG_8BPP, 8, area,
+	return s1d135xx_load_image(p, id, S1D13541_LD_IMG_8BPP, 8, area,
 				   left, top);
 }
 

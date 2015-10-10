@@ -28,6 +28,7 @@
 
 #include <string.h>
 #include <stdio.h>
+#include "../FFIS/FlashFileIndexSystem.h"
 #include "../epson/epson-epdc.h"
 #include "../epson/epson-i2c.h"
 #include "../pl/platform.h"
@@ -47,32 +48,33 @@
 #define LOG_TAG "probe"
 #include "../epd_sys/utils.h"
 
+
+
 /* ToDo: add to generic HV-PMIC interface */
 #define I2C_PMIC_ADDR_TPS65185 0x68
 #define I2C_PMIC_ADDR_MAX17135 0x48
 
-#if CONFIG_HWINFO_EEPROM
+//#if CONFIG_HWINFO_EEPROM
 int probe_hwinfo(struct pl_platform *plat, const struct i2c_eeprom *hw_eeprom,
-		 struct pl_hwinfo *hwinfo_eeprom,
+		 struct pl_hwinfo *hwinfo_nvm,
 		 const struct pl_hwinfo *hwinfo_default)
 {
-#if CONFIG_HWINFO_DEFAULT
-	if (pl_hwinfo_init(hwinfo_eeprom, hw_eeprom)) {
-		LOG("WARNING: EEPROM failed, using default HW info");
-		plat->hwinfo = hwinfo_default;
-	} else {
-		plat->hwinfo = hwinfo_eeprom;
-	}
-#else
-	if (pl_hwinfo_init(hwinfo_eeprom, hw_eeprom))
-		return -1;
 
-	plat->hwinfo = hwinfo_eeprom;
-#endif
+	if (!pl_hwinfo_init(hwinfo_nvm, hw_eeprom)) {
+		plat->hwinfo = hwinfo_nvm;
+	}
+	else if (!pl_hwinfo_init_flash(hwinfo_nvm)) {
+		LOG("WARNING: EEPROM failed, using HW info from Flash");
+		plat->hwinfo = hwinfo_nvm;
+	}
+	else {
+		LOG("WARNING: EEPROM and Flash failed, using default HW Info");
+		plat->hwinfo = hwinfo_default;
+	}
 
 	return 0;
 }
-#endif
+//#endif
 
 int probe_i2c(struct pl_platform *plat, struct s1d135xx *s1d135xx,
 	      struct pl_i2c *host_i2c, struct pl_i2c *disp_i2c)
@@ -117,31 +119,19 @@ int probe_i2c(struct pl_platform *plat, struct s1d135xx *s1d135xx,
 }
 
 int probe_dispinfo(struct pl_dispinfo *dispinfo, struct pl_wflib *wflib,
-		   FIL *fatfs_file, const char *fatfs_path,
 		   const struct i2c_eeprom *e,
 		   struct pl_wflib_eeprom_ctx *e_ctx)
 {
 #if CONFIG_DISP_DATA_EEPROM_ONLY
 	return (pl_dispinfo_init_eeprom(dispinfo, e) ||
 		pl_wflib_init_eeprom(wflib, e_ctx, e, dispinfo));
-#elif CONFIG_DISP_DATA_SD_ONLY
-	return (pl_dispinfo_init_fatfs(dispinfo) ||
-		pl_wflib_init_fatfs(wflib, fatfs_file, fatfs_path));
-#elif CONFIG_DISP_DATA_EEPROM_SD
+#elif CONFIG_DISP_DATA_EEPROM_FLASH
 	int retval;
 	retval = (pl_dispinfo_init_eeprom(dispinfo, e) ||
 			pl_wflib_init_eeprom(wflib, e_ctx, e, dispinfo) );
 	if (retval)
-		retval = (pl_dispinfo_init_fatfs(dispinfo) ||
-			pl_wflib_init_fatfs(wflib, fatfs_file, fatfs_path) );
-	return retval;
-#elif CONFIG_DISP_DATA_SD_EEPROM
-	int retval;
-	retval = (pl_dispinfo_init_fatfs(dispinfo) ||
-			pl_wflib_init_fatfs(wflib, fatfs_file, fatfs_path) );
-	if (retval)
-		retval = (pl_dispinfo_init_eeprom(dispinfo, e) ||
-			pl_wflib_init_eeprom(wflib, e_ctx, e, dispinfo) );
+		retval = (pl_dispinfo_init_ffis(dispinfo) ||
+			pl_wflib_init_ffis(wflib, (uint8_t)WAVEFORM_FILE_ID));
 	return retval;
 #endif
 }

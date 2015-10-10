@@ -33,28 +33,33 @@
 
 #define LOG_TAG "wflib"
 #include "../epd_sys/utils.h"
+#include "../FFIS/FlashFileIndexSystem.h"
+#include <stdint.h>
+#include "../epd_sys/config.h"
 
-/* ----------------------------------------------------------------------------
- * FatFS
+
+/*------------------------------------------------------------------------
+ * SPI FLASH (FFIS)
  */
 
-#define DATA_BUFFER_LENGTH 256
+#define DATA_BUFFER_LEN 256
 
-static int pl_wflib_fatfs_xfer(struct pl_wflib *wflib, pl_wflib_wr_t wr,
+static fileIndexEntry entry;
+
+static int pl_wflib_ffis_xfer(struct pl_wflib *wflib, pl_wflib_wr_t wr,
 			       void *ctx)
 {
-	FIL *f = wflib->priv;
-	size_t left = wflib->size;
 
-	if (f_lseek(f, 0) != FR_OK)
-		return -1;
+	//fileIndexEntry *entry = wflib->priv;
+	size_t left = wflib->size;
+	FFISretVal ret;
 
 	while (left) {
-		uint8_t data[DATA_BUFFER_LENGTH];
+		uint8_t data[DATA_BUFFER_LEN];
 		const size_t n = min(left, sizeof(data));
-		size_t count;
+		int count;
 
-		if ((f_read(f, data, n, &count) != FR_OK) || (count != n)) {
+		if ((fileRead(&flashObj, &entry, data, n, &count) != FFIS_OK) || (count != n)) {
 			LOG("Failed to read from file");
 			return -1;
 		}
@@ -65,21 +70,27 @@ static int pl_wflib_fatfs_xfer(struct pl_wflib *wflib, pl_wflib_wr_t wr,
 		left -= n;
 	}
 
+	if(ret = fileCheckIn(&flashObj, &entry))
+		printf("Error (%d) in checking in file \r\n", ret);
+
 	return 0;
 }
 
-int pl_wflib_init_fatfs(struct pl_wflib *wflib, FIL *f, const char *path)
+int pl_wflib_init_ffis(struct pl_wflib *wflib, uint8_t id)
 {
-	if (f_open(f, path, FA_READ) != FR_OK) {
-		LOG("Failed to open wflib: %s", path);
+	FFISretVal ret;
+
+	if(ret = fileCheckOut(&flashObj, id, &entry, READ)) {
+		LOG("Error (%d) in checking out wflib file in READ mode \r\n", ret);
 		return -1;
 	}
 
-	wflib->xfer = pl_wflib_fatfs_xfer;
-	wflib->size = f_size(f);
-	wflib->priv = f;
+	wflib->xfer = pl_wflib_ffis_xfer;
+	wflib->size = entry.fileSize;
 
-	LOG("FatFS (%s)", path);
+	wflib->priv = &entry;
+
+	LOG("FFIS file id: (%d)", id);
 
 	return 0;
 }

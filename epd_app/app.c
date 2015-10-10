@@ -31,31 +31,6 @@
 #define LOG_TAG "app"
 #include "../epd_sys/utils.h"
 
-static const char SLIDES_PATH[] = "img/slides.txt";
-
-int app_stop = 0;
-
-int app_demo(struct pl_platform *plat)
-{
-	int stat;
-	LOG("Here");
-	if (app_clear(plat))
-		return -1;
-
-	if (CONFIG_DEMO_POWERMODES)
-		stat = app_power(plat, "img");
-	else if (CONFIG_DEMO_PATTERN)
-		stat = app_pattern(plat);
-	else if (is_file_present("img/slides.txt"))
-		stat = app_sequencer(plat, SLIDES_PATH);
-	else if (CONFIG_DEMO_NEXT_SLIDE_WITH_SPACEBAR)
-		stat = app_slideshow_with_spacebar(plat, "img", 1);
-	else
-		stat = app_slideshow(plat, "img");
-
-	return stat;
-}
-
 #include "../pl/endian.h"
 
 int app_clear(struct pl_platform *plat)

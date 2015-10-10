@@ -9,9 +9,9 @@
 #define EPD_APP_SLIDESHOW_H_
 
 #include "../pl/platform.h"
+#include <stdint.h>
 
-int show_image(struct pl_platform *plat, const char *dir,
-		      const char *file);
+int show_image(struct pl_platform *plat, uint8_t fileID);
 
 int show_image_directstream(struct pl_platform *plat, unsigned char **data, int dataLen, file_streaming_stage_t stage);
 

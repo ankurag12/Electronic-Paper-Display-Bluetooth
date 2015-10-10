@@ -76,7 +76,7 @@ struct pl_epdc{
 	int (*update_temp)(struct pl_epdc *p);
 	int (*fill)(struct pl_epdc *p, const struct pl_area *area, uint8_t g);
 	int (*pattern_check)(struct pl_epdc *p, uint16_t size);
-	int (*load_image)(struct pl_epdc *p, const char *path,
+	int (*load_image)(struct pl_epdc *p, uint8_t id,
 			  const struct pl_area *area, int left, int top);
 	int (*load_image_directstream)(struct pl_epdc *p, unsigned char **data, int dataLen,
 		       const struct pl_area *area, int left, int top, file_streaming_stage_t stage);

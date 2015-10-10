@@ -32,23 +32,19 @@
 #include "../epd_sys/crc16.h"
 #include "../epd_sys/i2c-eeprom.h"
 #include "../epd_sys/pnm-utils.h"
-#include "../FatFs/ff.h"
+
 #include "../pl/endian.h"
 #include "../epd_sys/config.h"
 
 #define LOG_TAG "dispinfo"
 #include "../epd_sys/utils.h"
+#include "../FFIS/FlashFileIndexSystem.h"
 
 /* Set to 1 to enable verbose debug log messages */
 #define VERBOSE 0
 
-/* Root path on the SD card */
-#define ROOT_SD_PATH "0:"
-
 /* Ensure the last byte from an EEPROM string is a null character */
 #define STR_TERM(_str) do { _str[PL_DISPINFO_STR_LEN] = '\0'; } while(0)
-
-static int change_panel_dir(const char *panel_type);
 
 int pl_dispinfo_init_eeprom(struct pl_dispinfo *p,
 			    const struct i2c_eeprom *eeprom)
@@ -105,20 +101,23 @@ int pl_dispinfo_init_eeprom(struct pl_dispinfo *p,
 		return -1;
 	}
 
-	return change_panel_dir(p->info.panel_type);
+	return 0;
 }
 
-int pl_dispinfo_init_fatfs(struct pl_dispinfo *p)
+
+/*-------------------------------------------------------------------------
+ * SPI Flash FFIS
+ */
+
+int pl_dispinfo_init_ffis(struct pl_dispinfo *p)
 {
-	FIL vcom_file;
+	fileIndexEntry vcom_file;
+	FFISretVal ret;
 	int stat;
 
 	assert(p != NULL);
 
-	LOG("Loading display data from FatFS");
-
-	if (change_panel_dir(CONFIG_DISPLAY_TYPE))
-		return -1;
+	LOG("Loading display data from SPI Flash");
 
 	p->vermagic.magic = PL_DISPINFO_MAGIC;
 	p->vermagic.version = PL_DISPINFO_VERSION;
@@ -128,13 +127,15 @@ int pl_dispinfo_init_fatfs(struct pl_dispinfo *p)
 	strncpy(p->info.panel_type, CONFIG_DISPLAY_TYPE,
 		sizeof p->info.panel_type);
 
-	if (f_open(&vcom_file, "display/vcom", FA_READ) != FR_OK) {
-		LOG("VCOM file not found");
+	if(ret = fileCheckOut(&flashObj, (uint8_t)VCOM_FILE_ID, &vcom_file, READ)) {
+		LOG("Error (%d) in checking out VCOM file in read mode \r\n", ret);
 		return -1;
 	}
 
 	stat = pnm_read_int32(&vcom_file, &p->info.vcom);
-	f_close(&vcom_file);
+
+	if(ret = fileCheckIn(&flashObj, &vcom_file))
+		LOG("Error (%d) in checking in VCOM file \r\n", ret);
 
 	if (stat) {
 		LOG("Failed to read VCOM");
@@ -150,6 +151,7 @@ int pl_dispinfo_init_fatfs(struct pl_dispinfo *p)
 
 	return 0;
 }
+
 
 void pl_dispinfo_log(const struct pl_dispinfo *p)
 {
@@ -182,17 +184,3 @@ void pl_dispinfo_log(const struct pl_dispinfo *p)
 #endif
 }
 
-/* ----------------------------------------------------------------------------
- * static functions
- */
-
-static int change_panel_dir(const char *panel_type)
-{
-	char panel_path[MAX_PATH_LEN];
-
-	if (join_path(panel_path, MAX_PATH_LEN, ROOT_SD_PATH, panel_type) ||
-	    (f_chdir(panel_path) != FR_OK))
-		return -1;
-
-	return 0;
-}

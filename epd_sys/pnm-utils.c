@@ -61,14 +61,14 @@
 
 #include <stdlib.h>
 
-#include "../FatFs/ff.h"
 #include "assert-pl.h"
 #include "utils.h"
 
-int pnm_read_int32(FIL *pnm_file, int32_t *value)
+
+int pnm_read_int32(struct _fileIndexEntry *pnm_file, int32_t *value)
 {
-	UINT count;
-	char ch;
+	int count;
+	uint8_t ch;
 	int digits = 0;
 	int in_comment = 0;
 	int found = 0;
@@ -78,7 +78,7 @@ int pnm_read_int32(FIL *pnm_file, int32_t *value)
 	assert(value != NULL);
 
 	while (!found &&
-			(f_read(pnm_file,&ch,1,&count) == FR_OK) && count == 1)
+			(fileRead(&flashObj, pnm_file, &ch, 1, &count) == FFIS_OK) && count == 1)
 	{
 		switch (ch)
 		{
@@ -104,7 +104,7 @@ int pnm_read_int32(FIL *pnm_file, int32_t *value)
 					val = val * 10 + (ch - '0');
 					digits++;
 
-					if (f_eof(pnm_file)) {
+					if (digits == pnm_file->fileSize) {
 						found = 1;
 					}
 				}
@@ -122,17 +122,18 @@ int pnm_read_int32(FIL *pnm_file, int32_t *value)
 	return 0;
 }
 
-int pnm_read_header(FIL *pnm_file, struct pnm_header *hdr)
+
+int pnm_read_header(fileIndexEntry *pnm_file, struct pnm_header *hdr)
 {
 	char buffer[2];
-	UINT count;
+	int count;
 
 	assert(pnm_file);
 	assert(hdr);
 
 	hdr->type = PNM_UNKNOWN;
 
-	if (f_read(pnm_file,buffer,2,&count) != FR_OK)
+	if (fileRead(&flashObj, pnm_file, (uint8_t*)buffer, 2, &count) != FFIS_OK)
 		goto read_error;
 
 	if (buffer[0] != 'P')
@@ -271,6 +272,6 @@ int pnm_read_header_directstream(unsigned char **dataPtr, unsigned int dataLen, 
 	return 0;
 
 format_error:
-read_error:
+//read_error:
 	return -1;
 }
