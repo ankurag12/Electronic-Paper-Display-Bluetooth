@@ -146,7 +146,7 @@ int s1d135xx_load_init_code(struct s1d135xx *p)
 	uint16_t checksum;
 	int stat;
 
-	if (fileCheckOut(&flashObj, ECODE_FILE_ID, &init_code_file, READ))
+	if (fileCheckOut(&flashHWobj, ECODE_FILE_ID, &init_code_file, READ))
 			return -1;
 
 
@@ -158,7 +158,7 @@ int s1d135xx_load_init_code(struct s1d135xx *p)
 	stat = transfer_file_ffis(&init_code_file);
 	set_cs(p, 1);
 
-	fileCheckIn(&flashObj, &init_code_file);
+	fileCheckIn(&flashHWobj, &init_code_file);
 
 	if (stat) {
 		LOG("Failed to transfer init code file");
@@ -311,7 +311,7 @@ int s1d135xx_load_image(struct s1d135xx *p, uint8_t id, uint16_t mode,
 	int stat;
 	FFISretVal ret;
 
-	if (ret = fileCheckOut(&flashObj, id, &img_file, READ)) {
+	if (ret = fileCheckOut(&flashHWobj, id, &img_file, READ)) {
 		LOG("Error (%d) in checking out image file in read mode \r\n", ret);
 		return -1;
 	}
@@ -344,7 +344,7 @@ int s1d135xx_load_image(struct s1d135xx *p, uint8_t id, uint16_t mode,
 
 	set_cs(p, 1);
 
-	fileCheckIn(&flashObj, &img_file);
+	fileCheckIn(&flashHWobj, &img_file);
 
 	if (stat)
 		return -1;
@@ -590,7 +590,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 	fileIndexEntry file;
 	FFISretVal ret;
 
-	ret = fileCheckOut(&flashObj, REG_OVERRIDE_FILE_ID, &file, READ);
+	ret = fileCheckOut(&flashHWobj, REG_OVERRIDE_FILE_ID, &file, READ);
 
 	if(ret != FFIS_OK) {
 		if (ret == FILE_DOES_NOT_EXIST)
@@ -637,7 +637,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 		}
 	}
 
-	fileCheckIn(&flashObj, &file);
+	fileCheckIn(&flashHWobj, &file);
 
 	return stat;
 }
@@ -732,9 +732,9 @@ static int transfer_file_ffis(fileIndexEntry *file)
 	FFISretVal ret;
 
 	for (;;) {
-		int count;
+		uint16_t count;
 
-		if (ret = fileRead(&flashObj, file, data, sizeof(data), &count)) {
+		if (ret = fileRead(&flashHWobj, file, data, sizeof(data), &count)) {
 			LOG("Error (%d) in reading from image file on flash \r\n", ret);
 			return -1;
 		}

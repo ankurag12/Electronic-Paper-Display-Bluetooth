@@ -127,14 +127,14 @@ int pl_dispinfo_init_ffis(struct pl_dispinfo *p)
 	strncpy(p->info.panel_type, CONFIG_DISPLAY_TYPE,
 		sizeof p->info.panel_type);
 
-	if(ret = fileCheckOut(&flashObj, (uint8_t)VCOM_FILE_ID, &vcom_file, READ)) {
+	if(ret = fileCheckOut(&flashHWobj, (uint8_t)VCOM_FILE_ID, &vcom_file, READ)) {
 		LOG("Error (%d) in checking out VCOM file in read mode \r\n", ret);
 		return -1;
 	}
 
 	stat = pnm_read_int32(&vcom_file, &p->info.vcom);
 
-	if(ret = fileCheckIn(&flashObj, &vcom_file))
+	if(ret = fileCheckIn(&flashHWobj, &vcom_file))
 		LOG("Error (%d) in checking in VCOM file \r\n", ret);
 
 	if (stat) {

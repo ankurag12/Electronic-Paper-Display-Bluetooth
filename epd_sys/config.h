@@ -78,7 +78,7 @@
 /** Set to 1 to have stdout, stderr sent to serial port */
 #define CONFIG_UART_PRINTF		0
 
-#define SAVE_IMG_ON_EXT_FLASH	1
+#define SAVE_IMG_ON_EXT_FLASH	0
 
 enum fileIDs {
 	ECODE_FILE_ID 			=	(1),
@@ -86,7 +86,13 @@ enum fileIDs {
 	WAVEFORM_FILE_ID 		=	(3),
 	HWINFO_FILE_ID			=	(4),
 	REG_OVERRIDE_FILE_ID	=	(5),
-	RECEIVED_IMG_FILE_ID 	=	(6)
+	RECEIVED_JPEG_FILE_ID 	=	(6),
+	RECEIVED_PNM_FILE_ID	=	(7),
+	STORED_PNM_FILE_ID_1	=	(8),
+	STORED_PNM_FILE_ID_2	=	(9),
+	STORED_PNM_FILE_ID_3	=	(10),
+	STORED_PNM_FILE_ID_4	=	(11)
+
 };
 
 #endif /* INCLUDE_CONFIG_H */

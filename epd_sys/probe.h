@@ -53,6 +53,6 @@ extern int probe_hvpmic(struct pl_platform *plat, struct vcom_cal *vcom_cal,
 			struct tps65185_info *pmic_info);
 extern int probe_epdc(struct pl_platform *plat, struct s1d135xx *s1d135xx);
 
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* INCLUDE_PROBE_H */

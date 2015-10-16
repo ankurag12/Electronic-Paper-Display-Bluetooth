@@ -117,6 +117,6 @@ extern uint16_t s1d135xx_read_reg(struct s1d135xx *p, uint16_t reg);
 extern void s1d135xx_write_reg(struct s1d135xx *p, uint16_t reg, uint16_t val);
 extern int s1d135xx_load_register_overrides(struct s1d135xx *p);
 
-extern struct _FlashHW flashObj;
+extern struct _FlashHW flashHWobj;
 
 #endif /* INCLUDE_EPSON_S1D135XX_H */

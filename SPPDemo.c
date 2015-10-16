@@ -23,6 +23,7 @@
 #include "epd_app/app.h"
 #include "epd_app/slideshow.h"
 #include "epd_sys/config.h"
+#include "jpeg_decomp/jpeg2pnm.h"
 
 #include <stdio.h>
 
@@ -336,7 +337,7 @@ static Send_Info_t         SendInfo;                /* Variable that contains   
 static unsigned int        BufferLength;
 
 static unsigned char       Buffer[810];
-static unsigned char 		fileBytesUncomp[1600];
+//static unsigned char 		fileBytesUncomp[1600];
 //static unsigned char 	   RcvdData[256];
 
 static Boolean_t		NewDataArrived;
@@ -4492,10 +4493,10 @@ int ReadCmdFromPhoneApp()
 	//static unsigned char * fileBytesUncomp = NULL;
 	static int i=0;
 	static int j=0;
-	static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
+	//static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
 	static int ctr=0;
 	static uint8_t fileID;
-	static int bw, br;
+	static uint16_t bw, br;
 	static fileIndexEntry newEntry;
 	static FFISretVal ret;
 
@@ -4519,11 +4520,8 @@ int ReadCmdFromPhoneApp()
 				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
 					Display(("Baudrate upgrade to 921600 failed \r\n"));
 
-
-#if SAVE_IMG_ON_EXT_FLASH
-				if(ret = fileCheckOut(&flashObj, RECEIVED_IMG_FILE_ID, &newEntry, WRITE))
-					Display(("Error (%d) in checking out received file in write mode \r\n", ret));
-#endif
+				if(ret = fileCheckOut(&flashHWobj, RECEIVED_JPEG_FILE_ID, &newEntry, WRITE))
+					Display(("Error (%d) in checking out received jpeg file in write mode \r\n", ret));
 
 				BTPS_Delay(20);
 				Write(ACK_STRING);
@@ -4531,77 +4529,33 @@ int ReadCmdFromPhoneApp()
 
 			case PNM_FILE_HEADER:
 
-#if SAVE_IMG_ON_EXT_FLASH
-				ret = fileWrite(&flashObj, &newEntry, dataPacketPayloadPtr, dataPacketLength, &bw);
-				if((ret != FFIS_OK) || (bw != dataPacketLength))
-					Display(("Error (%d) in writing received file on flash \r\n", ret));
-#endif
-
-				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, HEADER)) {
-					Display(("Some issue in initializing file streaming \r\n"));
-					break;
-				}
-
-
-
 				Write(ACK_STRING);
 				break;
 
 			case DATA_FILE_CHUNK:
 
-				switch(dataPacketComp) {
-					case NO_COMPRESSION:
-						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
-						for(i=0; i<dataPacketLength; i++)
-							fileBytesUncomp[i] = *(dataPacketPayloadPtr+i);
-						break;
-
-					case TWO_BYTES_TO_ONE_COMPRESSION:
-						dataPacketLength = dataPacketLength*2;
-						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
-						for(i=0, j=0; i<dataPacketLength; i+=2, j++) {
-							fileBytesUncomp[i] = (*(dataPacketPayloadPtr+j) & 0xF0) | (*(dataPacketPayloadPtr+j)>>4);
-							fileBytesUncomp[i+1] = (*(dataPacketPayloadPtr+j)<<4) | (*(dataPacketPayloadPtr+j) & 0x0F);
-						}
-						break;
-					default:
-						Display(("Unknown compression type. \r\n"));
-						return -1;
-				}
-
-
-				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, BODY)) {
-					Display(("Some issue in receving file body \r\n"));
-					Write(ERR_STRING);
-					break;
-				}
-
-#if SAVE_IMG_ON_EXT_FLASH
-				ret = fileWrite(&flashObj, &newEntry, fileBytesUncomp, dataPacketLength, &bw);
+				ret = fileWriteNoErase(&flashHWobj, &newEntry, dataPacketPayloadPtr, dataPacketLength, &bw);
 				if((ret != FFIS_OK) || (bw != dataPacketLength))
 					Display(("Error (%d) in writing received file on flash \r\n", ret));
-#endif
 
-
-				//free(fileBytesUncomp);
 				Write(ACK_STRING);
 				break;
 
 			case CMD_END_OF_FILE:
 
+				if(ret = fileCheckIn(&flashHWobj, &newEntry))
+					Display(("Error (%d) in checking in received jpeg file \r\n", ret));
 
-				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, FINISH)) {
-					Display(("Some issue in finishing file streaming \r\n"));
-					break;
+				//Display(("done!\r\n"));
+
+				decompressJPEG();
+
+				if (show_image(&g_plat, RECEIVED_PNM_FILE_ID)) {
+					Display(("Failed to show image\r\n"));
+					return -1;
 				}
 
-#if SAVE_IMG_ON_EXT_FLASH
-				if(ret = fileCheckIn(&flashObj, &newEntry))
-					Display(("Error (%d) in checking in received file \r\n", ret));
-#endif
-
-
-				Display(("done!\r\n"));
+				cleanScribbleArea();
 				Write(ACK_STRING);
 				break;
 
@@ -4642,6 +4596,8 @@ int ReadCmdFromPhoneApp()
 	return ret_val;
 
 }
+
+
    /* The following function is used to process a command line string.  */
    /* This function takes as it's only parameter the command line string*/
    /* to be parsed and returns TRUE if a command was parsed and executed*/

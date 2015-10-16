@@ -61,6 +61,6 @@ extern int pnm_read_int32(fileIndexEntry *pnm_file, int32_t *value);
 int pnm_read_header_directstream(unsigned char **dataPtr, unsigned int dataLen, struct pnm_header *hdr);
 int pnm_read_int32_directstream(unsigned char **data, unsigned int dataLen, int32_t *value);
 
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* PNM_UTILS_H */

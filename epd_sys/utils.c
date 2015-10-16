@@ -73,10 +73,10 @@ int is_file_present(uint8_t id)
 {
 	fileIndexEntry f;
 
-	if (fileCheckOut(&flashObj, id, &f, READ) != FFIS_OK)
+	if (fileCheckOut(&flashHWobj, id, &f, READ) != FFIS_OK)
 		return 0;
 
-	fileCheckIn(&flashObj, &f);
+	fileCheckIn(&flashHWobj, &f);
 
 	return 1;
 }

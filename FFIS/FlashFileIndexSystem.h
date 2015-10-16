@@ -10,11 +10,17 @@
 
 #include <stdint.h>
 
-
+// Sector number at which index info is written (for some hardware (like Spansion), this might not be flexible)
 #define FFIS_INDEX_SECTOR_NUM		(0)
+
 //#define FFIS_MAX_NUM_OF_FILES 		(6)
+
+// Sector number at which file data starts
 #define FFIS_FILEDATA_SECTOR_NUM	(1)
+
+// Nummber of extra sectors after each file just to allow small expansion in size
 #define FILE_APPENDIX_SECTORS_CNT	(0)
+
 
 typedef enum {
 	FFIS_OK,
@@ -35,9 +41,9 @@ typedef enum {
 } checkOutMode;
 
 typedef enum {
-	SECTOR,
-	SUBSECTOR
-} eraseMode;
+	ERASE_BEFORE_WRITE,
+	NO_ERASE_BEFORE_WRITE
+} writeMode;
 
 typedef struct _fileIndexEntry {
 	uint8_t fileID;
@@ -60,8 +66,10 @@ typedef struct _FlashHW {
 
 FFISretVal fileCheckOut(FlashHW *flashObj, uint8_t id, fileIndexEntry *entry, checkOutMode);
 FFISretVal fileCheckIn(FlashHW *flashObj, fileIndexEntry *entry);
-FFISretVal fileWrite(FlashHW *flashObj, fileIndexEntry* entry, uint8_t *data, int len, int *bw);
-FFISretVal fileRead(FlashHW *flashObj, fileIndexEntry* entry, uint8_t *data, int len, int *br);
-
+FFISretVal fileWrite(FlashHW *flashObj, fileIndexEntry* entry, uint8_t *data, uint16_t len, uint16_t *bw);
+FFISretVal fileRead(FlashHW *flashObj, fileIndexEntry* entry, uint8_t *data, uint16_t len, uint16_t *br);
+FFISretVal fileSeek(fileIndexEntry *entry, uint32_t offset);
+FFISretVal fileErase(FlashHW *flashObj, fileIndexEntry *entry, uint32_t len);		// This is NOT file delete. See function definition
+FFISretVal fileWriteNoErase(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, uint16_t len, uint16_t *bw);
 
 #endif /* FFIS_FLASHFILEINDEXSYSTEM_H_ */

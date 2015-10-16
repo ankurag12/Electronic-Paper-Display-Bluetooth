@@ -124,12 +124,12 @@ int parser_read_area(const char *str, const char *sep, struct pl_area *a)
 
 int parser_read_ffis_file_line(fileIndexEntry *f, char *buffer, int max_length)
 {
-	int count;
+	uint16_t count;
 	char *out;
 	int i;
 
 	for (i = 0, out = buffer; i < max_length; ++i, ++out) {
-		if (fileRead(&flashObj, f, (uint8_t*)out, 1, &count) != FFIS_OK)
+		if (fileRead(&flashHWobj, f, (uint8_t*)out, 1, &count) != FFIS_OK)
 			return -1;
 
 		if ((*out == '\n') || !count)

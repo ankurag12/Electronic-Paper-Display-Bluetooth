@@ -59,6 +59,6 @@ extern int parser_read_area(const char *str, const char *sep,
 
 extern int parser_read_ffis_file_line(fileIndexEntry *f, char *buffer, int max_length);
 
-extern struct _FlashHW flashObj;
+extern struct _FlashHW flashHWobj;
 
 #endif /* INCLUDE_APP_PARSER_H */
