@@ -72,6 +72,6 @@ extern int pl_dispinfo_init_fatfs(struct pl_dispinfo *p);
 extern int pl_dispinfo_init_ffis(struct pl_dispinfo *p);
 /** Log the display data */
 extern void pl_dispinfo_log(const struct pl_dispinfo *p);
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* INCLUDE_PL_DISPINFO_H */

@@ -88,6 +88,8 @@ static int transfer_file_ffis(fileIndexEntry *file);
 static int transfer_file_directstream(unsigned char **dataPtr, unsigned int dataLen);
 static int transfer_image_ffis(fileIndexEntry *f, const struct pl_area *area, int left,
 			  int top, int width);
+static int transfer_image_directstream(unsigned char **dataPtr, unsigned int dataLen, const struct pl_area *area, int left,
+			  int top, struct pnm_header *hdr);
 static void transfer_data(const uint8_t *data, size_t n);
 static void send_cmd_area(struct s1d135xx *p, uint16_t cmd, uint16_t mode,
 			  const struct pl_area *area);
@@ -146,7 +148,7 @@ int s1d135xx_load_init_code(struct s1d135xx *p)
 	uint16_t checksum;
 	int stat;
 
-	if (fileCheckOut(&flashObj, ECODE_FILE_ID, &init_code_file, READ))
+	if (fileCheckOut(&flashHWobj, ECODE_FILE_ID, &init_code_file, READ))
 			return -1;
 
 
@@ -158,7 +160,7 @@ int s1d135xx_load_init_code(struct s1d135xx *p)
 	stat = transfer_file_ffis(&init_code_file);
 	set_cs(p, 1);
 
-	fileCheckIn(&flashObj, &init_code_file);
+	fileCheckIn(&flashHWobj, &init_code_file);
 
 	if (stat) {
 		LOG("Failed to transfer init code file");
@@ -311,7 +313,7 @@ int s1d135xx_load_image(struct s1d135xx *p, uint8_t id, uint16_t mode,
 	int stat;
 	FFISretVal ret;
 
-	if (ret = fileCheckOut(&flashObj, id, &img_file, READ)) {
+	if (ret = fileCheckOut(&flashHWobj, id, &img_file, READ)) {
 		LOG("Error (%d) in checking out image file in read mode \r\n", ret);
 		return -1;
 	}
@@ -344,7 +346,7 @@ int s1d135xx_load_image(struct s1d135xx *p, uint8_t id, uint16_t mode,
 
 	set_cs(p, 1);
 
-	fileCheckIn(&flashObj, &img_file);
+	fileCheckIn(&flashHWobj, &img_file);
 
 	if (stat)
 		return -1;
@@ -363,11 +365,11 @@ int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr
 			int top, file_streaming_stage_t stage)
 {
 	int stat;
+	static struct pnm_header hdr;
 	switch(stage)
 	{
 		case HEADER:
 		{
-			struct pnm_header hdr;
 
 			if (pnm_read_header_directstream(dataPtr, dataLen, &hdr))
 				return -1;
@@ -397,8 +399,7 @@ int s1d135xx_load_image_directstream(struct s1d135xx *p, unsigned char **dataPtr
 			if (area == NULL)
 				return transfer_file_directstream(dataPtr, dataLen);
 			else
-				//stat = transfer_image(&img_file, area, left, top, hdr.width);
-				LOG("Area is not NULL, transferring partial image not yet implemented");
+				return transfer_image_directstream(dataPtr, dataLen, area, left, top, &hdr);
 			break;
 		}
 
@@ -590,7 +591,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 	fileIndexEntry file;
 	FFISretVal ret;
 
-	ret = fileCheckOut(&flashObj, REG_OVERRIDE_FILE_ID, &file, READ);
+	ret = fileCheckOut(&flashHWobj, REG_OVERRIDE_FILE_ID, &file, READ);
 
 	if(ret != FFIS_OK) {
 		if (ret == FILE_DOES_NOT_EXIST)
@@ -637,7 +638,7 @@ int s1d135xx_load_register_overrides(struct s1d135xx *p)
 		}
 	}
 
-	fileCheckIn(&flashObj, &file);
+	fileCheckIn(&flashHWobj, &file);
 
 	return stat;
 }
@@ -732,9 +733,9 @@ static int transfer_file_ffis(fileIndexEntry *file)
 	FFISretVal ret;
 
 	for (;;) {
-		int count;
+		uint16_t count;
 
-		if (ret = fileRead(&flashObj, file, data, sizeof(data), &count)) {
+		if (ret = fileRead(&flashHWobj, file, data, sizeof(data), &count)) {
 			LOG("Error (%d) in reading from image file on flash \r\n", ret);
 			return -1;
 		}
@@ -748,6 +749,51 @@ static int transfer_file_ffis(fileIndexEntry *file)
 	return 0;
 }
 
+static int transfer_image_ffis(fileIndexEntry *f, const struct pl_area *area, int left,
+			  int top, int width)
+{
+	uint8_t data[DATA_BUFFER_LENGTH];
+	size_t line;
+
+	/* Simple bounds check */
+	if (width < area->width || width < (left + area->width)) {
+		LOG("Invalid combination of width/left/area");
+		return -1;
+	}
+
+	if (fileSeek(&flashHWobj, f, f->bookMark - f->startAddr + ((long)top * (unsigned long)width)) != FFIS_OK)
+		return -1;
+
+	for (line = area->height; line; --line) {
+		size_t count;
+		size_t remaining = area->width;
+
+		/* Find the first relevant pixel (byte) on this line */
+		if (fileSeek(&flashHWobj, f, f->bookMark - f->startAddr + (unsigned long)left) != FFIS_OK)
+			return -1;
+
+		/* Transfer data of interest in chunks */
+		while (remaining) {
+			size_t btr = (remaining <= DATA_BUFFER_LENGTH) ?
+					remaining : DATA_BUFFER_LENGTH;
+
+			if (fileRead(&flashHWobj, f, data, btr, &count) != FFIS_OK)
+				return -1;
+
+			transfer_data(&data[0], btr);
+
+			remaining -= btr;
+		}
+
+		/* Move file pointer to end of line */
+		if (fileSeek(&flashHWobj, f, f->bookMark - f->startAddr + (width - (left + area->width))) != FFIS_OK)
+			return -1;
+	}
+
+	return 0;
+
+}
+
 static int transfer_file_directstream(unsigned char **dataPtr, unsigned int dataLen)
 {
 
@@ -756,11 +802,90 @@ static int transfer_file_directstream(unsigned char **dataPtr, unsigned int data
 	return 0;
 }
 
-static int transfer_image_ffis(fileIndexEntry *f, const struct pl_area *area, int left,
-			  int top, int width)
+static int transfer_image_directstream(unsigned char **dataPtr, unsigned int dataLen, const struct pl_area *area, int left,
+			  int top, struct pnm_header *hdr)
 {
-	// Not implemented
-	return -1;
+	// Simple bounds check
+	if (hdr->width < area->width || hdr->width < (left + area->width)) {
+		LOG("Invalid combination of width/left/area");
+		return -1;
+	}
+
+	uint8_t *data;
+	data = (uint8_t*)(*dataPtr);
+	static uint16_t dataInd;
+	static uint8_t inRegion = 0;
+	int16_t bts;
+	uint16_t numOfLines;
+	static uint32_t stBound = 0;
+	static uint32_t endBound = 0;
+	static uint32_t stPtr = 0;
+	static uint32_t endPtr = 0;
+	static uint16_t lineNum;
+	uint32_t lineStart;
+	uint32_t lineEnd;
+
+	endBound+=dataLen;
+	numOfLines = (endBound - left)/(uint32_t)hdr->width - (stBound + (hdr->width - area->width - left))/(uint32_t)hdr->width + 1;
+
+	if (inRegion==0) {
+		stPtr = (long)top * (unsigned long)hdr->width + (unsigned long)left;
+		if(endBound<stPtr) {
+			stBound+=dataLen;
+			return 0;
+		} else {
+			inRegion = 1;
+			lineNum = top;
+			numOfLines = (uint16_t)(endBound/(uint32_t)hdr->width) - (uint16_t)(stPtr/(uint32_t)hdr->width) + 1;
+		}
+	}
+
+	while(numOfLines>0) {
+		lineStart = (unsigned long)lineNum * (unsigned long)hdr->width + (unsigned long)left;
+		lineEnd = (unsigned long)lineNum * (unsigned long)hdr->width + (unsigned long)left + (unsigned long)(area->width);
+
+		if(stBound < lineStart) {
+			stPtr = lineStart;
+		} else if (stBound >= lineStart && stBound <= lineEnd) {
+			stPtr = stBound;
+		} else {
+			stPtr = lineStart + (unsigned long)hdr->width;
+		}
+
+		if (endBound < lineStart) {
+			endPtr = lineEnd - (unsigned long)hdr->width;
+		} else if(endBound >= lineStart && endBound < lineEnd) {
+			endPtr = endBound;
+		} else {
+			endPtr = lineEnd;
+			lineNum++;
+		}
+
+		dataInd = stPtr - stBound;
+		bts = endPtr - stPtr;
+		if(bts>0 && inRegion==1) {
+			transfer_data(&data[dataInd], bts);
+		}
+
+		numOfLines--;
+	}
+
+	stBound+=dataLen;
+
+	if (lineNum >= top + area->height) {
+		inRegion = 2;
+	}
+
+	if(lineNum >= hdr->height) {
+		inRegion = 0;
+		stBound = 0;
+		endBound = 0;
+		stPtr = 0;
+		endPtr = 0;
+		lineNum = 0;
+	}
+
+	return 0;
 }
 
 static void transfer_data(const uint8_t *data, size_t n)

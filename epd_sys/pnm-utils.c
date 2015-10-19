@@ -67,7 +67,7 @@
 
 int pnm_read_int32(struct _fileIndexEntry *pnm_file, int32_t *value)
 {
-	int count;
+	uint16_t count;
 	uint8_t ch;
 	int digits = 0;
 	int in_comment = 0;
@@ -78,7 +78,7 @@ int pnm_read_int32(struct _fileIndexEntry *pnm_file, int32_t *value)
 	assert(value != NULL);
 
 	while (!found &&
-			(fileRead(&flashObj, pnm_file, &ch, 1, &count) == FFIS_OK) && count == 1)
+			(fileRead(&flashHWobj, pnm_file, &ch, 1, &count) == FFIS_OK) && count == 1)
 	{
 		switch (ch)
 		{
@@ -126,14 +126,14 @@ int pnm_read_int32(struct _fileIndexEntry *pnm_file, int32_t *value)
 int pnm_read_header(fileIndexEntry *pnm_file, struct pnm_header *hdr)
 {
 	char buffer[2];
-	int count;
+	uint16_t count;
 
 	assert(pnm_file);
 	assert(hdr);
 
 	hdr->type = PNM_UNKNOWN;
 
-	if (fileRead(&flashObj, pnm_file, (uint8_t*)buffer, 2, &count) != FFIS_OK)
+	if (fileRead(&flashHWobj, pnm_file, (uint8_t*)buffer, 2, &count) != FFIS_OK)
 		goto read_error;
 
 	if (buffer[0] != 'P')

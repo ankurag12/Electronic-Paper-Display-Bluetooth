@@ -83,6 +83,6 @@ struct pnm_header;
 /** Print the contents of a buffer with offsets on stdout */
 extern void dump_hex(const void *data, uint16_t len);
 
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* INCLUDE_UTIL_H */

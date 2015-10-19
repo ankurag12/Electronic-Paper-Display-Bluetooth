@@ -86,7 +86,7 @@ static const char VERSION[] = "v008";
 /* Platform instance, to be passed to other modules */
 struct pl_platform g_plat;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
 				//
-FlashHW flashObj;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
+FlashHW flashHWobj;				// GLOBAL DEFINITION! Not Static. Use extern elsewhere
 
 /* --- System GPIOs --- */
 
@@ -343,7 +343,7 @@ void epd_sys_init(void)
 
 
 	/*  Initialize  Flash File Index System */
-	if(FFIS_init(&flashObj))
+	if(FFIS_init(&flashHWobj))
 		abort_msg("FFIS init Failed", ABORT_MSP430_COMMS_INIT);
 
 	/* load hardware information */
@@ -384,10 +384,11 @@ void epd_sys_init(void)
 
 	/* run the application */
 	app_clear(&g_plat);			//TEMPORARY!!
-	if (show_image(&g_plat, RECEIVED_IMG_FILE_ID)) {
-		LOG("Failed to show saved image\r\n");
-	}
-	//msp430_uart_write(1,"Hello World",11);		// TEST FOR UART
+
+//	if (show_image(&g_plat, RECEIVED_IMG_FILE_ID, NULL)) {
+//		LOG("Failed to show saved image\r\n");
+//	}
+
 
 	//app_slideshow(&g_plat,"img");
 	//if (app_demo(&g_plat))

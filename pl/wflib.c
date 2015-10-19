@@ -57,9 +57,9 @@ static int pl_wflib_ffis_xfer(struct pl_wflib *wflib, pl_wflib_wr_t wr,
 	while (left) {
 		uint8_t data[DATA_BUFFER_LEN];
 		const size_t n = min(left, sizeof(data));
-		int count;
+		uint16_t count;
 
-		if ((fileRead(&flashObj, &entry, data, n, &count) != FFIS_OK) || (count != n)) {
+		if ((fileRead(&flashHWobj, &entry, data, n, &count) != FFIS_OK) || (count != n)) {
 			LOG("Failed to read from file");
 			return -1;
 		}
@@ -70,7 +70,7 @@ static int pl_wflib_ffis_xfer(struct pl_wflib *wflib, pl_wflib_wr_t wr,
 		left -= n;
 	}
 
-	if(ret = fileCheckIn(&flashObj, &entry))
+	if(ret = fileCheckIn(&flashHWobj, &entry))
 		printf("Error (%d) in checking in file \r\n", ret);
 
 	return 0;
@@ -80,7 +80,7 @@ int pl_wflib_init_ffis(struct pl_wflib *wflib, uint8_t id)
 {
 	FFISretVal ret;
 
-	if(ret = fileCheckOut(&flashObj, id, &entry, READ)) {
+	if(ret = fileCheckOut(&flashHWobj, id, &entry, READ)) {
 		LOG("Error (%d) in checking out wflib file in READ mode \r\n", ret);
 		return -1;
 	}

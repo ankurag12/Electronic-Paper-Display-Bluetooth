@@ -106,6 +106,6 @@ extern int pl_hwinfo_init(struct pl_hwinfo *info,
 extern int pl_hwinfo_init_flash(struct pl_hwinfo *info);
 extern void pl_hwinfo_log(const struct pl_hwinfo *info);
 
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* INCLUDE_PL_HWINFO_H */

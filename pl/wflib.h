@@ -62,6 +62,6 @@ extern int pl_wflib_init_eeprom(struct pl_wflib *wflib,
 				struct pl_wflib_eeprom_ctx *p,
 				const struct i2c_eeprom *eeprom,
 				const struct pl_dispinfo *dispinfo);
-extern FlashHW flashObj;
+extern FlashHW flashHWobj;
 
 #endif /* INCLUDE_PL_WFLIB_H */

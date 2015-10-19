@@ -4495,9 +4495,10 @@ int ReadCmdFromPhoneApp()
 	static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
 	static int ctr=0;
 	static uint8_t fileID;
-	static int bw, br;
+	static uint16_t bw, br;
 	static fileIndexEntry newEntry;
 	static FFISretVal ret;
+	static struct disp_coord coord;
 
 	//Display(("%d\r\n",ctr++));
 
@@ -4509,7 +4510,7 @@ int ReadCmdFromPhoneApp()
 		NewDataArrived = FALSE;
 		dataPacketType = (Data_Packet_Type_t) Buffer[0];
 		dataPacketComp = (Data_Packet_Comp_t) Buffer[1];
-		dataPacketLength=Buffer[2]+256*Buffer[3];
+		dataPacketLength= (Buffer[3]<<8)|(Buffer[2]);
 		dataPacketPayloadPtr = &Buffer[4];
 
 		switch(dataPacketType)
@@ -4519,9 +4520,11 @@ int ReadCmdFromPhoneApp()
 				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
 					Display(("Baudrate upgrade to 921600 failed \r\n"));
 
+				memcpy(&coord, dataPacketPayloadPtr, sizeof(struct disp_coord));		// Platform dependent !!
+
 
 #if SAVE_IMG_ON_EXT_FLASH
-				if(ret = fileCheckOut(&flashObj, RECEIVED_IMG_FILE_ID, &newEntry, WRITE))
+				if(ret = fileCheckOut(&flashHWobj, RECEIVED_IMG_FILE_ID, &newEntry, WRITE))
 					Display(("Error (%d) in checking out received file in write mode \r\n", ret));
 #endif
 
@@ -4532,17 +4535,16 @@ int ReadCmdFromPhoneApp()
 			case PNM_FILE_HEADER:
 
 #if SAVE_IMG_ON_EXT_FLASH
-				ret = fileWrite(&flashObj, &newEntry, dataPacketPayloadPtr, dataPacketLength, &bw);
+				ret = fileWrite(&flashHWobj, &newEntry, dataPacketPayloadPtr, dataPacketLength, &bw);
 				if((ret != FFIS_OK) || (bw != dataPacketLength))
 					Display(("Error (%d) in writing received file on flash \r\n", ret));
 #endif
-
-				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, HEADER)) {
+#if DIRECT_STREAM_IMG
+				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, &coord, HEADER)) {
 					Display(("Some issue in initializing file streaming \r\n"));
 					break;
 				}
-
-
+#endif
 
 				Write(ACK_STRING);
 				break;
@@ -4569,15 +4571,15 @@ int ReadCmdFromPhoneApp()
 						return -1;
 				}
 
-
-				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, BODY)) {
+#if DIRECT_STREAM_IMG
+				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, &coord, BODY)) {
 					Display(("Some issue in receving file body \r\n"));
 					Write(ERR_STRING);
 					break;
 				}
-
+#endif
 #if SAVE_IMG_ON_EXT_FLASH
-				ret = fileWrite(&flashObj, &newEntry, fileBytesUncomp, dataPacketLength, &bw);
+				ret = fileWrite(&flashHWobj, &newEntry, fileBytesUncomp, dataPacketLength, &bw);
 				if((ret != FFIS_OK) || (bw != dataPacketLength))
 					Display(("Error (%d) in writing received file on flash \r\n", ret));
 #endif
@@ -4589,14 +4591,14 @@ int ReadCmdFromPhoneApp()
 
 			case CMD_END_OF_FILE:
 
-
-				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, FINISH)) {
+#if DIRECT_STREAM_IMG
+				if(show_image_directstream(&g_plat, &dataPacketPayloadPtr, dataPacketLength, &coord, FINISH)) {
 					Display(("Some issue in finishing file streaming \r\n"));
 					break;
 				}
-
+#endif
 #if SAVE_IMG_ON_EXT_FLASH
-				if(ret = fileCheckIn(&flashObj, &newEntry))
+				if(ret = fileCheckIn(&flashHWobj, &newEntry))
 					Display(("Error (%d) in checking in received file \r\n", ret));
 #endif
 
@@ -4612,11 +4614,11 @@ int ReadCmdFromPhoneApp()
 			case CMD_DISPLAY_IMAGE:
 
 				fileID = (uint8_t)(*dataPacketPayloadPtr+0);
-				app_clear(&g_plat);
-				if (show_image(&g_plat, fileID)) {
-					Display(("Failed to show image\r\n"));
-					return -1;
-				}
+				//app_clear(&g_plat);
+				//if (show_image(&g_plat, fileID, &coord)) {
+				//	Display(("Failed to show image\r\n"));
+				//	return -1;
+				//}
 				Write(ACK_STRING);
 				break;
 

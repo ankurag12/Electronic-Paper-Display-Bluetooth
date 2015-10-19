@@ -101,19 +101,19 @@ int pl_hwinfo_init_flash(struct pl_hwinfo *info)
 	uint16_t crc;
 	fileIndexEntry entry;
 	FFISretVal ret;
-	int br;
+	uint16_t br;
 
-	if(ret = fileCheckOut(&flashObj, (uint8_t)HWINFO_FILE_ID, &entry, READ)) {
+	if(ret = fileCheckOut(&flashHWobj, (uint8_t)HWINFO_FILE_ID, &entry, READ)) {
 		LOG("Error (%d) in checking out HW Info file in read mode \r\n", ret);
 		return -1;
 	}
 
-	if (ret = fileRead(&flashObj, &entry, (uint8_t *)info, sizeof(*info), &br)) {
+	if (ret = fileRead(&flashHWobj, &entry, (uint8_t *)info, sizeof(*info), &br)) {
 		LOG("Error (%d) in reading HW Info file \r\n", ret);
 		return -1;
 	}
 
-	if(ret = fileCheckIn(&flashObj, &entry))
+	if(ret = fileCheckIn(&flashHWobj, &entry))
 		printf("Error (%d) in checking in HW Info file \r\n", ret);
 
 	crc = crc16_run(crc16_init, (const uint8_t *)info,

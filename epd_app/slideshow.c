@@ -39,12 +39,14 @@
 
 //static int cmd_next = 0;
 
-
-int show_image(struct pl_platform *plat, uint8_t id)
+int show_image(struct pl_platform *plat, uint8_t id, struct disp_coord *coord)
 {
 	struct pl_epdc *epdc = &plat->epdc;
 	struct pl_epdpsu *psu = &plat->psu;
 	int wfid;
+	struct pl_area *area = &coord->area;
+	int left_in = coord->left_in;
+	int top_in = coord->top_in;
 
 	wfid = pl_epdc_get_wfid(epdc, wf_refresh);
 
@@ -52,7 +54,7 @@ int show_image(struct pl_platform *plat, uint8_t id)
 		return -1;
 
 
-	if (epdc->load_image(epdc, id, NULL, 0, 0))
+	if (epdc->load_image(epdc, id, area, left_in, top_in))
 		return -1;
 
 	if (epdc->update_temp(epdc))
@@ -61,7 +63,7 @@ int show_image(struct pl_platform *plat, uint8_t id)
 	if (psu->on(psu))
 		return -1;
 
-	if (epdc->update(epdc, wfid, NULL))
+	if (epdc->update(epdc, wfid, area))
 		return -1;
 
 	if (epdc->wait_update_end(epdc))
@@ -74,12 +76,15 @@ int show_image(struct pl_platform *plat, uint8_t id)
 }
 
 
-int show_image_directstream(struct pl_platform *plat, unsigned char **data, int dataLen, file_streaming_stage_t stage)
+int show_image_directstream(struct pl_platform *plat, unsigned char **data, int dataLen, struct disp_coord *coord, file_streaming_stage_t stage)
 {
 	struct pl_epdc *epdc = &plat->epdc;
 	struct pl_epdpsu *psu = &plat->psu;
 	//char path[MAX_PATH_LEN];
 	int wfid;
+	struct pl_area *area = &coord->area;
+	int left_in = coord->left_in;
+	int top_in = coord->top_in;
 
 	switch(stage) {
 		case HEADER:
@@ -91,18 +96,18 @@ int show_image_directstream(struct pl_platform *plat, unsigned char **data, int 
 			//if (join_path(path, sizeof(path), dir, file))
 			//	return -1;
 
-			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+			if (epdc->load_image_directstream(epdc, data, dataLen, area, left_in, top_in, stage))
 				return -1;
 
 			break;
 
 		case BODY:
-			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+			if (epdc->load_image_directstream(epdc, data, dataLen, area, left_in, top_in, stage))
 				return -1;
 			break;
 
 		case FINISH:
-			if (epdc->load_image_directstream(epdc, data, dataLen, NULL, 0, 0, stage))
+			if (epdc->load_image_directstream(epdc, data, dataLen, area, left_in, top_in, stage))
 				return -1;
 
 			if (epdc->update_temp(epdc))
@@ -111,7 +116,7 @@ int show_image_directstream(struct pl_platform *plat, unsigned char **data, int 
 			if (psu->on(psu))
 				return -1;
 
-			if (epdc->update(epdc, wfid, NULL))
+			if (epdc->update(epdc, wfid, area))
 				return -1;
 
 			if (epdc->wait_update_end(epdc))

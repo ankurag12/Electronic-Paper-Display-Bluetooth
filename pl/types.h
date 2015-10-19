@@ -42,4 +42,10 @@ struct pl_area {
 	int height;
 };
 
+struct disp_coord {
+	struct pl_area area;
+	int left_in;
+	int top_in;
+};
+
 #endif /* INCLUDE_PL_TYPES_H */

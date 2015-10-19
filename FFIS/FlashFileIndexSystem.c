@@ -17,7 +17,7 @@
  * Each file is stored in contigous sectors, so the amount by which a file size could be expanded really depends
  * on if the file is the last file (expandable to the flash size limit),
  * or the amount of space left in the last sector of the file.
- * There is not check implemented yet if file size expansion is attempted over the limit,
+ * There is no check implemented yet if file size expansion is attempted over the limit,
  * and doing so will silently overwrite the file in the next sector(s).
  * Therefore, file size should not be increased, unless the file in question is the last file.
  * If the application requires too much variation in file size, add spare sectors between files
@@ -111,7 +111,7 @@ FFISretVal fileCheckOut(FlashHW *flashObj, uint8_t id, fileIndexEntry *entry, ch
 FFISretVal fileCheckIn(FlashHW *flashObj, fileIndexEntry *entry) {
 	uint8_t nextID = 0;
 	uint32_t currAddr = (uint32_t)FFIS_INDEX_SECTOR_NUM*(uint32_t)FLASH_SECTOR_SIZE;
-	int subSecNum = (int)FFIS_INDEX_SECTOR_NUM*(int)FLASH_SUBSECTORS_PER_SECTOR;
+	uint16_t subSecNum = (uint16_t)FFIS_INDEX_SECTOR_NUM*(uint16_t)FLASH_SUBSECTORS_PER_SECTOR;
 	int indexCnt = 0;
 	int indexPos = 0;
 	fileIndexEntry	*indexBackup;
@@ -195,7 +195,7 @@ FFISretVal fileCheckIn(FlashHW *flashObj, fileIndexEntry *entry) {
 
 
 
-FFISretVal fileWrite(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, int len, int *bw) {
+FFISretVal fileWrite(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, uint16_t len, uint16_t *bw) {
 	uint16_t eraseSecSt;
 	uint8_t xSecBndry;
 	if(entry->statFlag!=0)
@@ -218,12 +218,12 @@ FFISretVal fileWrite(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, in
 
 	return FFIS_OK;
 
-
 }
 
-FFISretVal fileRead(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, int len, int *br) {
+
+FFISretVal fileRead(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, uint16_t len, uint16_t *br) {
 	
-	if(entry->statFlag!=1)
+	if(entry->statFlag!=1)				// Not in read mode
 		return FILE_WRONG_CHECKOUT_MODE;
 		
 	if (entry->bookMark + len > entry->startAddr + entry->fileSize)
@@ -239,4 +239,68 @@ FFISretVal fileRead(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, int
 	
 }
 
+FFISretVal fileSeek(FlashHW *flashObj, fileIndexEntry *entry, uint32_t offset) {
 
+	if(entry->statFlag==0xFF)							// Not checked out
+		return FILE_WRONG_CHECKOUT_MODE;
+
+	if(entry->statFlag==1 && offset > entry->fileSize)	// Reading over file limit (writing is allowed)
+		return FFIS_INVALID_PARAMS;
+
+	entry->bookMark = entry->startAddr + offset;
+
+	return FFIS_OK;
+
+}
+
+/* fileErase() DOES NOT delete a file from the index, it only erases the content sectors
+ * (from start of file for len bytes) so that the next write
+ * can be fast in critical situations like writing a file received over bluetooth.
+ * To erase a file, it must be checked out in WRITE mode, and checked back in after erase operation
+ * This function is equivalent to writing 0xFFFF...... on the file.
+ */
+
+FFISretVal fileErase(FlashHW *flashObj, fileIndexEntry *entry, uint32_t len) {
+
+
+	uint16_t eraseSecSt = entry->startSecNum;
+	uint16_t secCount = (len - 1)/FLASH_SECTOR_SIZE + 1;
+
+	if(entry->statFlag!=0)
+		return FILE_WRONG_CHECKOUT_MODE;
+
+	if(flashObj->flashEraseSector(flashObj, eraseSecSt, secCount))
+		return FLASH_ERASE_ERROR;
+
+	entry->bookMark=entry->startAddr + len;
+
+	if(len>entry->fileSize)
+		entry->fileSize = len;
+
+	entry->secSpan = (uint16_t)((entry->startAddr+entry->fileSize-1)/FLASH_SECTOR_SIZE) - (uint16_t)((entry->startAddr)/FLASH_SECTOR_SIZE)+1;
+
+	return FFIS_OK;
+
+}
+
+/* This file write function assumes that the flash area has already been erased (by flashErase())
+ * so that the write operation is very fast. This is useful in critical situations like
+ * writing file received over BT.
+ */
+
+FFISretVal fileWriteNoErase(FlashHW *flashObj, fileIndexEntry *entry, uint8_t *data, uint16_t len, uint16_t *bw) {
+
+	if(entry->statFlag!=0)
+		return FILE_WRONG_CHECKOUT_MODE;
+
+	if(flashObj->flashWrite(flashObj, entry->bookMark, data, len))
+		return FLASH_WRITE_ERROR;
+	*bw = len;
+
+	entry->bookMark+=len;
+	entry->fileSize+=len;
+	entry->secSpan = (uint16_t)((entry->startAddr+entry->fileSize-1)/FLASH_SECTOR_SIZE) - (uint16_t)((entry->startAddr)/FLASH_SECTOR_SIZE)+1;
+
+	return FFIS_OK;
+
+}
