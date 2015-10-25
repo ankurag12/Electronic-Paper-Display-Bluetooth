@@ -136,9 +136,9 @@
 
 #define SERVER_PORT_NUMBER							(1)
 
-#define MAX_FRAME_SIZE								(796)
-#define TX_BUFFER_SIZE								(800)
-#define RX_BUFFER_SIZE								(800)
+#define MAX_FRAME_SIZE								(329)
+#define TX_BUFFER_SIZE								(329)
+#define RX_BUFFER_SIZE								(2303)
 
 #define ACK_STRING								"1\r\n"
 #define ERR_STRING								"2\r\n"
@@ -335,9 +335,9 @@ static Send_Info_t         SendInfo;                /* Variable that contains   
    /* functionality of this test application.                           */
 static unsigned int        BufferLength;
 
-static unsigned char       Buffer[810];
-static unsigned char 		fileBytesUncomp[1600];
-//static unsigned char 	   RcvdData[256];
+static unsigned char       Buffer[330];
+static unsigned char 		fileBytesUncomp[660];
+static int 	   				recvdBytes;
 
 static Boolean_t		NewDataArrived;
 
@@ -4035,127 +4035,21 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
                                                                                                                     SPP_Event_Data->Event_Data.SPP_Port_Status_Indication_Data->BreakTimeout));
 
             break;
+
          case etPort_Data_Indication:
-            /* Data was received.  Process it differently based upon the*/
-            /* current state of the Loopback Mode.                      */
-            if(LoopbackActive)
-            {
-               /* Initialize Done to false.                             */
-               Done = FALSE;
-
-               /* Loop until the write buffer is full or there is not   */
-               /* more data to read.                                    */
-               while((Done == FALSE) && (BufferFull == FALSE))
-               {
-                  /* The application state is currently in the loop back*/
-                  /* state.  Read as much data as we can read.          */
-                  if((TempLength = SPP_Data_Read(BluetoothStackID, SerialPortID, (Word_t)sizeof(Buffer), (Byte_t *)Buffer)) > 0)
-                  {
-                     /* Adjust the Current Buffer Length by the number  */
-                     /* of bytes which were successfully read.          */
-                     BufferLength = TempLength;
-
-                     /* Next attempt to write all of the data which is  */
-                     /* currently in the buffer.                        */
-                     if((TempLength = SPP_Data_Write(BluetoothStackID, SerialPortID, (Word_t)BufferLength, (Byte_t *)Buffer)) < (int)BufferLength)
-                     {
-                        /* Not all of the data was successfully written */
-                        /* or an error occurred, first check to see if  */
-                        /* an error occurred.                           */
-                        if(TempLength >= 0)
-                        {
-                           /* An error did not occur therefore the      */
-                           /* Transmit Buffer must be full.  Adjust the */
-                           /* Buffer and Buffer Length by the amount    */
-                           /* which as successfully written.            */
-                           if(TempLength)
-                           {
-                              for(Index=0,Index1=TempLength;Index1<BufferLength;Index++,Index1++)
-                                 Buffer[Index] = Buffer[Index1];
-
-                              BufferLength -= TempLength;
-                           }
-
-                           /* Set the flag indicating that the SPP Write*/
-                           /* Buffer is full.                           */
-                           BufferFull = TRUE;
-                        }
-                        else
-                           Done = TRUE;
-                     }
-                  }
-                  else
-                     Done = TRUE;
-               }
-
-               _DisplayPrompt = FALSE;
-            }
-            else
-            {
-               /* If we are operating in Raw Data Display Mode then     */
-               /* simply display the data that was give to use.         */
-               if((DisplayRawData) || (AutomaticReadActive))
-               {
-                  /* Initialize Done to false.                          */
-                  Done = FALSE;
-
-                  /* Loop through and read all data that is present in  */
-                  /* the buffer.                                        */
-                  while(!Done)
-                  {
-                     /* Read as much data as possible.                  */
-                     if((TempLength = SPP_Data_Read(BluetoothStackID, SerialPortID, (Word_t)sizeof(Buffer)-1, (Byte_t *)Buffer)) > 0)
-                     {
-                    	 Buffer[TempLength] = '\0';
-                    	 Display((" Buffer = \n"));
-                     	 Display(((char *)Buffer));
-/*                     	 memcpy(RcvdData,Buffer,sizeof(Buffer));
-                    	 if(strcmp(CmdToEPD, EPD_CMD_NULL)==0)
-                    		 memcpy(CmdToEPD, RcvdData, sizeof(CmdToEPD));*/
-                    	 //Display(("\n RcvdData = \n;"));
-                    	 //Display(((char *)RcvdData));
-
-                        /* Now simply display each character that we    */
-                        /* have just read.                              */
-                        if(DisplayRawData)
-                        {
-                           Buffer[TempLength] = '\0';
-
-                           Display(((char *)Buffer));
-                        }
-                     }
-                     else
-                     {
-                        /* Either an error occurred or there is no more */
-                        /* data to be read.                             */
-                        if(TempLength < 0)
-                        {
-                           /* Error occurred.                           */
-                           Display(("SPP_Data_Read(): Error %d.\r\n", TempLength));
-                        }
-
-                        /* Regardless if an error occurred, we are      */
-                        /* finished with the current loop.              */
-                        Done = TRUE;
-                     }
-                  }
-
-                  _DisplayPrompt = FALSE;
-               }
-               else
-               {
-                  /* Simply inform the user that data has arrived.      */
-            	  NewDataArrived=TRUE;
-                 // Display(("\r\n"));
-                 // Display(("SPP Data Indication, ID: 0x%04X, Length: 0x%04X.\r\n", SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->SerialPortID,
-                 //                                                                  SPP_Event_Data->Event_Data.SPP_Data_Indication_Data->DataLength));
-               }
-            }
+            /* Data was received.  */
+            /* Simply inform the user that data has arrived.      */
+			recvdBytes = SPP_Data_Read(BluetoothStackID, SerialPortID, (Word_t)(sizeof(Buffer)), (Byte_t*)&Buffer);
+			//Display(("%d \r\n", recvdBytes));
+			//NewDataArrived=TRUE;
+			ReadCmdFromPhoneApp();
             break;
+
          case etPort_Send_Port_Information_Indication:
             /* Simply Respond with the information that was sent to us. */
             ret_val = SPP_Respond_Port_Information(BluetoothStackID, SPP_Event_Data->Event_Data.SPP_Send_Port_Information_Indication_Data->SerialPortID, &SPP_Event_Data->Event_Data.SPP_Send_Port_Information_Indication_Data->SPPPortInformation);
             break;
+
          case etPort_Transmit_Buffer_Empty_Indication:
             /* The transmit buffer is now empty after being full.  Next */
             /* check the current application state.                     */
@@ -4434,8 +4328,11 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
                     	 DisplayFunctionError("Error in setting Config Params", temp_ret);
                     	 Display((" \r\nSetting Default values \r\n"));
                      }
-                     /* Open a server port*/
 
+     				 if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
+     					 Display(("Baudrate upgrade to 921600 failed \r\n"));
+
+                     /* Open a server port*/
                      if(!OpenServer(&ServerParams))
                      {
 						 /* Return success to the caller.                   */
@@ -4488,10 +4385,12 @@ int ReadCmdFromPhoneApp()
 	static Data_Packet_Type_t dataPacketType;
 	static Data_Packet_Comp_t dataPacketComp;
 	static int dataPacketLength;
+	static int dataPacketUncompLength;
 	static unsigned char * dataPacketPayloadPtr;
+	static uint8_t dataPacketTrailer;
 	//static unsigned char * fileBytesUncomp = NULL;
-	static int i=0;
 	static int j=0;
+	static int i=0;
 	static unsigned char *fileBytesUncompPtr = fileBytesUncomp;
 	static int ctr=0;
 	static uint8_t fileID;
@@ -4500,36 +4399,34 @@ int ReadCmdFromPhoneApp()
 	static FFISretVal ret;
 	static struct disp_coord coord;
 
+	int pos = 0;
 	//Display(("%d\r\n",ctr++));
 
 
-	if(NewDataArrived)
+	while(recvdBytes>0)
 	{
 
-		ret_val = Read(NULL);
 		NewDataArrived = FALSE;
-		dataPacketType = (Data_Packet_Type_t) Buffer[0];
-		dataPacketComp = (Data_Packet_Comp_t) Buffer[1];
-		dataPacketLength= (Buffer[3]<<8)|(Buffer[2]);
-		dataPacketPayloadPtr = &Buffer[4];
+		//ret_val = Read(NULL);
+		dataPacketType = (Data_Packet_Type_t) Buffer[pos + 0];
+		dataPacketComp = (Data_Packet_Comp_t) Buffer[pos + 1];
+		dataPacketLength= (Buffer[pos + 3]<<8)|(Buffer[pos + 2]);
+		dataPacketPayloadPtr = &Buffer[pos + 4];
+		dataPacketTrailer = Buffer[pos + dataPacketLength+4];
+
+		//Display(("%d %d\r\n", dataPacketType, dataPacketTrailer));
 
 		switch(dataPacketType)
 		{
 			case CMD_PREP_FILE_TRANSFER:
 				Display(("Preparing for File Transfer \r\n"));
-				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)921600))
-					Display(("Baudrate upgrade to 921600 failed \r\n"));
-
 				memcpy(&coord, dataPacketPayloadPtr, sizeof(struct disp_coord));		// Platform dependent !!
-
 
 #if SAVE_IMG_ON_EXT_FLASH
 				if(ret = fileCheckOut(&flashHWobj, RECEIVED_IMG_FILE_ID, &newEntry, WRITE))
 					Display(("Error (%d) in checking out received file in write mode \r\n", ret));
 #endif
-
 				BTPS_Delay(20);
-				Write(ACK_STRING);
 				break;
 
 			case PNM_FILE_HEADER:
@@ -4545,23 +4442,19 @@ int ReadCmdFromPhoneApp()
 					break;
 				}
 #endif
-
-				Write(ACK_STRING);
 				break;
 
 			case DATA_FILE_CHUNK:
 
 				switch(dataPacketComp) {
 					case NO_COMPRESSION:
-						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
 						for(i=0; i<dataPacketLength; i++)
 							fileBytesUncomp[i] = *(dataPacketPayloadPtr+i);
 						break;
 
 					case TWO_BYTES_TO_ONE_COMPRESSION:
-						dataPacketLength = dataPacketLength*2;
-						//fileBytesUncomp = (unsigned char*) malloc(dataPacketLength);
-						for(i=0, j=0; i<dataPacketLength; i+=2, j++) {
+						dataPacketUncompLength = dataPacketLength*2;
+						for(i=0, j=0; i<dataPacketUncompLength; i+=2, j++) {
 							fileBytesUncomp[i] = (*(dataPacketPayloadPtr+j) & 0xF0) | (*(dataPacketPayloadPtr+j)>>4);
 							fileBytesUncomp[i+1] = (*(dataPacketPayloadPtr+j)<<4) | (*(dataPacketPayloadPtr+j) & 0x0F);
 						}
@@ -4572,21 +4465,17 @@ int ReadCmdFromPhoneApp()
 				}
 
 #if DIRECT_STREAM_IMG
-				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketLength, &coord, BODY)) {
+				if(show_image_directstream(&g_plat, &fileBytesUncompPtr, dataPacketUncompLength, &coord, BODY)) {
 					Display(("Some issue in receving file body \r\n"));
 					Write(ERR_STRING);
 					break;
 				}
 #endif
 #if SAVE_IMG_ON_EXT_FLASH
-				ret = fileWrite(&flashHWobj, &newEntry, fileBytesUncomp, dataPacketLength, &bw);
-				if((ret != FFIS_OK) || (bw != dataPacketLength))
+				ret = fileWrite(&flashHWobj, &newEntry, fileBytesUncomp, dataPacketUncompLength, &bw);
+				if((ret != FFIS_OK) || (bw != dataPacketUncompLength))
 					Display(("Error (%d) in writing received file on flash \r\n", ret));
 #endif
-
-
-				//free(fileBytesUncomp);
-				Write(ACK_STRING);
 				break;
 
 			case CMD_END_OF_FILE:
@@ -4601,10 +4490,7 @@ int ReadCmdFromPhoneApp()
 				if(ret = fileCheckIn(&flashHWobj, &newEntry))
 					Display(("Error (%d) in checking in received file \r\n", ret));
 #endif
-
-
 				Display(("done!\r\n"));
-				Write(ACK_STRING);
 				break;
 
 			case CMD_UNMOUNT_SDCARD:
@@ -4619,26 +4505,20 @@ int ReadCmdFromPhoneApp()
 				//	Display(("Failed to show image\r\n"));
 				//	return -1;
 				//}
-				Write(ACK_STRING);
 				break;
 
 			default :
 				Display(("Unknown data packet ID \r\n"));
 
-/*				if (VS_Update_UART_Baud_Rate(BluetoothStackID, (DWord_t)115200))
-					Display(("Baudrate setting to default 115200 failed \r\n"));
+/*
 				if(HCI_Write_Link_Policy_Settings(BluetoothStackID, Connection_Handle, HCI_LINK_POLICY_SETTINGS_ENABLE_MASTER_SLAVE_SWITCH|HCI_LINK_POLICY_SETTINGS_ENABLE_HOLD_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_PARK_MODE, &StatusResult, &Connection_HandleResult))
 					Display(("Disabling LPM in BT module failed"));*/
 				BTPS_Delay(20);
-				Write("2\r\n");
-
-
 		}
 
-	}
-	else
-	{
-		//
+		recvdBytes -= (dataPacketLength+5);			// need to clean up this "+5" thing everywhere
+		pos += dataPacketLength+5;
+
 	}
 
 	return ret_val;
