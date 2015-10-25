@@ -287,7 +287,7 @@ static void MainThread(void)
 
       /* Add the idle function (which determines if LPM3 may be entered)*/
       /* to the scheduler.                                              */
-      BTPS_AddFunctionToScheduler(CheckForRcvdCmd, NULL, 1);
+      //BTPS_AddFunctionToScheduler(CheckForRcvdCmd, NULL, 1);
       //if(BTPS_AddFunctionToScheduler(IdleFunction, NULL, 1))
 
       BTPS_ExecuteScheduler();
