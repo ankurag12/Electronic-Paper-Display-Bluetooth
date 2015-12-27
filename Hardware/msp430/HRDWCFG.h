@@ -52,7 +52,7 @@ typedef enum
    /* transmitter.                                                      */
    /* * NOTE * If this value is 0 then this will generate to a Blocking */
    /*          Write.                                                   */
-#define BT_DEBUG_UART_TX_BUFFER_SIZE   (3*80)
+#define BT_DEBUG_UART_TX_BUFFER_SIZE   (0)
 
    /* The DEBUG UART I/O Pin Base.  Should be set to the address of the */
    /* Input register of the I/O Port where the desired UART's Tx/Rx pins*/

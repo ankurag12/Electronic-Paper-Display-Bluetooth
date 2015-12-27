@@ -60,9 +60,9 @@ void flash_spi_init()
 
 void flash_spi_send_bytes(uint8_t *bytes, uint16_t len)
 {
-	uint16_t gie = __get_SR_register() & GIE;   // Store current GIE state
+	//uint16_t gie = __get_SR_register() & GIE;   // Store current GIE state
 
-    __disable_interrupt();                      // Make this operation atomic
+    //__disable_interrupt();                      // Make this operation atomic
 
     while(len--) {
     	while (!(UCxnIFG & UCTXIFG)) ;          // Wait while not ready for TX
@@ -74,15 +74,15 @@ void flash_spi_send_bytes(uint8_t *bytes, uint16_t len)
     UCxnRXBUF;                                  // Dummy read to empty RX buffer
                                                 // and clear any overrun conditions
 
-    __bis_SR_register(gie);                     // Restore original GIE state
+   // __bis_SR_register(gie);                     // Restore original GIE state
 
 }
 
 void flash_spi_read_bytes(uint8_t *bytes, uint16_t len)
 {
-    uint16_t gie = __get_SR_register() & GIE;   // Store current GIE state
+   // uint16_t gie = __get_SR_register() & GIE;   // Store current GIE state
 
-    __disable_interrupt();                      // Make this operation atomic
+   // __disable_interrupt();                      // Make this operation atomic
 
     UCxnIFG &= ~UCRXIFG;                        // Ensure RXIFG is clear
 
@@ -94,7 +94,7 @@ void flash_spi_read_bytes(uint8_t *bytes, uint16_t len)
         *bytes++ = UCxnRXBUF;
     }
 
-    __bis_SR_register(gie);                     // Restore original GIE state
+   //__bis_SR_register(gie);                     // Restore original GIE state
 }
 
 

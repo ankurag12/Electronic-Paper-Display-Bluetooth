@@ -79,7 +79,7 @@
 #define CONFIG_UART_PRINTF		0
 
 #define DIRECT_STREAM_IMG		1
-#define SAVE_IMG_ON_EXT_FLASH	0
+#define SAVE_IMG_ON_EXT_FLASH	1
 
 enum fileIDs {
 	ECODE_FILE_ID 			=	(1),

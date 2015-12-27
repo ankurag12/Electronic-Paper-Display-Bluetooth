@@ -41,7 +41,7 @@
                                                          /* number of inquiry */
                                                          /* results.          */
 
-#define MAX_SUPPORTED_LINK_KEYS                    (1)   /* Max supported Link*/
+#define MAX_SUPPORTED_LINK_KEYS                    (5)   /* Max supported Link*/
                                                          /* keys.             */
 
 #define DEFAULT_IO_CAPABILITY          (icDisplayYesNo)  /* Denotes the       */
@@ -226,6 +226,9 @@ typedef enum _tagData_Packet_Comp_t
 
 } Data_Packet_Comp_t;
 
+
+//static unsigned long        ElapsedTicks;
+//static unsigned long 		PreviousTickCount = 0;
 
 
 static int                 UI_Mode;                 /* Holds the UI Mode.              */
@@ -3938,6 +3941,7 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
    Boolean_t _DisplayPrompt = TRUE;
    Boolean_t Done;
 
+
    /* **** SEE SPPAPI.H for a list of all possible event types.  This   */
    /* program only services its required events.                   **** */
 
@@ -4039,10 +4043,11 @@ static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_
          case etPort_Data_Indication:
             /* Data was received.  */
             /* Simply inform the user that data has arrived.      */
+
 			recvdBytes = SPP_Data_Read(BluetoothStackID, SerialPortID, (Word_t)(sizeof(Buffer)), (Byte_t*)&Buffer);
-			//Display(("%d \r\n", recvdBytes));
-			//NewDataArrived=TRUE;
+
 			ReadCmdFromPhoneApp();
+
             break;
 
          case etPort_Send_Port_Information_Indication:
@@ -4406,7 +4411,7 @@ int ReadCmdFromPhoneApp()
 	while(recvdBytes>0)
 	{
 
-		NewDataArrived = FALSE;
+		//NewDataArrived = FALSE;
 		//ret_val = Read(NULL);
 		dataPacketType = (Data_Packet_Type_t) Buffer[pos + 0];
 		dataPacketComp = (Data_Packet_Comp_t) Buffer[pos + 1];
@@ -4472,6 +4477,7 @@ int ReadCmdFromPhoneApp()
 				}
 #endif
 #if SAVE_IMG_ON_EXT_FLASH
+
 				ret = fileWrite(&flashHWobj, &newEntry, fileBytesUncomp, dataPacketUncompLength, &bw);
 				if((ret != FFIS_OK) || (bw != dataPacketUncompLength))
 					Display(("Error (%d) in writing received file on flash \r\n", ret));
@@ -4489,6 +4495,11 @@ int ReadCmdFromPhoneApp()
 #if SAVE_IMG_ON_EXT_FLASH
 				if(ret = fileCheckIn(&flashHWobj, &newEntry))
 					Display(("Error (%d) in checking in received file \r\n", ret));
+
+				if (show_image(&g_plat, RECEIVED_IMG_FILE_ID, &coord)) {
+					Display(("Failed to show image\r\n"));
+					return -1;
+				}
 #endif
 				Display(("done!\r\n"));
 				break;
@@ -4513,7 +4524,7 @@ int ReadCmdFromPhoneApp()
 /*
 				if(HCI_Write_Link_Policy_Settings(BluetoothStackID, Connection_Handle, HCI_LINK_POLICY_SETTINGS_ENABLE_MASTER_SLAVE_SWITCH|HCI_LINK_POLICY_SETTINGS_ENABLE_HOLD_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_SNIFF_MODE|HCI_LINK_POLICY_SETTINGS_ENABLE_PARK_MODE, &StatusResult, &Connection_HandleResult))
 					Display(("Disabling LPM in BT module failed"));*/
-				BTPS_Delay(20);
+				//BTPS_Delay(20);
 		}
 
 		recvdBytes -= (dataPacketLength+5);			// need to clean up this "+5" thing everywhere

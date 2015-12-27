@@ -223,19 +223,19 @@ static void IdleFunction(void *UserParameter)
 }
 
 
-static void TestFunction(void *UserParameter){
-
-	Display(("Hello"));
-	BTPS_Delay(5000);
-}
-
-static void CheckForRcvdCmd(void *UserParameter){
-
-	int ret_val;
-	ret_val = ReadCmdFromPhoneApp();
-	//Display(("ret_val = %d ",ret_val));
-
-}
+//static void TestFunction(void *UserParameter){
+//
+//	Display(("Hello"));
+//	BTPS_Delay(5000);
+//}
+//
+//static void CheckForRcvdCmd(void *UserParameter){
+//
+//	int ret_val;
+//	ret_val = ReadCmdFromPhoneApp();
+//	//Display(("ret_val = %d ",ret_val));
+//
+//}
 
    /* The following function is the main user interface thread.  It     */
    /* opens the Bluetooth Stack and then drives the main user interface.*/
