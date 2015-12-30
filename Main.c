@@ -55,73 +55,6 @@ static void ProcessCharacters(void);
 static void IdleFunction(void *UserParameter);
 static void MainThread(void);
 
-   /* The following function is responsible for retrieving the Commands */
-   /* from the Serial Input routines and copying this Command into the  */
-   /* specified Buffer.  This function blocks until a Command (defined  */
-   /* to be a NULL terminated ASCII string).  The Serial Data Callback  */
-   /* is responsible for building the Command and dispatching the Signal*/
-   /* that this function waits for.                                     */
-/*static int GetInput(void)
-{
-   char Char;
-   int  Done;
-
-    Initialize the Flag indicating a complete line has been parsed.
-   Done = 0;
-
-    Attempt to read data from the Console.
-   while((!Done) && (HAL_ConsoleRead(1, &Char)))
-   {
-      switch(Char)
-      {
-         case '\r':
-         case '\n':
-             This character is a new-line or a line-feed character
-             NULL terminate the Input Buffer.
-            Input[InputIndex] = '\0';
-
-             Set Done to the number of bytes that are to be returned.
-             ** NOTE ** In the current implementation any data after a
-                        new-line or line-feed character will be lost.
-                        This is fine for how this function is used is
-                        no more data will be entered after a new-line
-                        or line-feed.
-            Done       = (InputIndex-1);
-            InputIndex = 0;
-            break;
-         case 0x08:
-             Backspace has been pressed, so now decrement the number
-             of bytes in the buffer (if there are bytes in the
-             buffer).
-            if(InputIndex)
-            {
-               InputIndex--;
-               HAL_ConsoleWrite(3, "\b \b");
-            }
-            break;
-         default:
-             Accept any other printable characters.
-            if((Char >= ' ') && (Char <= '~'))
-            {
-                Add the Data Byte to the Input Buffer, and make sure
-                that we do not overwrite the Input Buffer.
-               Input[InputIndex++] = Char;
-               HAL_ConsoleWrite(1, &Char);
-
-                Check to see if we have reached the end of the buffer.
-               if(InputIndex == (MAX_COMMAND_LENGTH-1))
-               {
-                  Input[InputIndex] = 0;
-                  Done              = (InputIndex-1);
-                  InputIndex        = 0;
-               }
-            }
-            break;
-      }
-   }
-
-   return(Done);
-}*/
 
    /* The following is the HCI Sleep Callback.  This is registered with */
    /* the stack to note when the Host processor may enter into a sleep  */
@@ -146,18 +79,6 @@ static unsigned long GetTickCallback(void)
    return(HAL_GetTickCount());
 }
 
-   /* The following function processes terminal input.                  */
-/*
-static void ProcessCharacters(void)
-{
-    Check to see if we have a command to process.
-   if(GetInput() > 0)
-   {
-       Attempt to process a character.
-      ProcessCommandLine(Input);
-   }
-}
-*/
 
    /* The following function is responsible for checking the idle state */
    /* and possibly entering LPM3 mode.                                  */

@@ -378,6 +378,7 @@ static BTPSCONST char *IOCapabilitiesStrings[] =
 static char  DataStr[]  = "0123456789";
 static int   DataStrLen = (sizeof(DataStr)-1);
 
+const char deviceName[] = "Sticker";
 const char img_path[] = "img";
 
 const char 		EPD_CMD_NEXT_IMG[] 		=	{32, 0};
@@ -428,7 +429,6 @@ static int PINCodeResponse(ParameterList_t *TempParam);
 static int PassKeyResponse(ParameterList_t *TempParam);
 static int UserConfirmationResponse(ParameterList_t *TempParam);
 static int GetLocalAddress(ParameterList_t *TempParam);
-static int SetLocalName(ParameterList_t *TempParam);
 static int GetLocalName(ParameterList_t *TempParam);
 static int SetClassOfDevice(ParameterList_t *TempParam);
 static int GetClassOfDevice(ParameterList_t *TempParam);
@@ -455,553 +455,13 @@ static int SendData(ParameterList_t *TempParam);
 static int ServerMode(ParameterList_t *TempParam);
 static int ClientMode(ParameterList_t *TempParam);
 
+static int SetLocalName(const char *strName);
+
    /* BTPS Callback function prototypes.                                */
 static void BTPSAPI GAP_Event_Callback(unsigned int BluetoothStackID, GAP_Event_Data_t *GAP_Event_Data, unsigned long CallbackParameter);
 static void BTPSAPI SPP_Event_Callback(unsigned int BluetoothStackID, SPP_Event_Data_t *SPP_Event_Data, unsigned long CallbackParameter);
 static void BTPSAPI HCI_Event_Callback(unsigned int BluetoothStackID, HCI_Event_Data_t *HCI_Event_Data, unsigned long CallbackParameter);
 
-   /* This function is responsible for taking the input from the user   */
-   /* and dispatching the appropriate Command Function.  First, this    */
-   /* function retrieves a String of user input, parses the user input  */
-   /* into Command and Parameters, and finally executes the Command or  */
-   /* Displays an Error Message if the input is not a valid Command.    */
-/*
-static void UserInterface_Client(void)
-{
-    Next display the available commands.
-   DisplayHelp(NULL);
-   ClearCommands();
-
-   AddCommand("INQUIRY", Inquiry);
-   AddCommand("DISPLAYINQUIRYLIST", DisplayInquiryList);
-   AddCommand("PAIR", Pair);
-   AddCommand("ENDPAIRING", EndPairing);
-   AddCommand("PINCODERESPONSE", PINCodeResponse);
-   AddCommand("PASSKEYRESPONSE", PassKeyResponse);
-   AddCommand("USERCONFIRMATIONRESPONSE", UserConfirmationResponse);
-   AddCommand("SETDISCOVERABILITYMODE", SetDiscoverabilityMode);
-   AddCommand("SETCONNECTABILITYMODE", SetConnectabilityMode);
-   AddCommand("SETPAIRABILITYMODE", SetPairabilityMode);
-   AddCommand("CHANGESIMPLEPAIRINGPARAMETERS", ChangeSimplePairingParameters);
-   AddCommand("GETLOCALADDRESS", GetLocalAddress);
-   AddCommand("SETLOCALNAME", SetLocalName);
-   AddCommand("GETLOCALNAME", GetLocalName);
-   AddCommand("SETCLASSOFDEVICE", SetClassOfDevice);
-   AddCommand("GETCLASSOFDEVICE", GetClassOfDevice);
-   AddCommand("GETREMOTENAME", GetRemoteName);
-   AddCommand("SNIFFMODE", SniffMode);
-   AddCommand("EXITSNIFFMODE", ExitSniffMode);
-   AddCommand("OPEN", OpenRemoteServer);
-   AddCommand("CLOSE", CloseRemoteServer);
-   AddCommand("READ", Read);
-   AddCommand("WRITE", Write);
-   AddCommand("GETCONFIGPARAMS", GetConfigParams);
-   AddCommand("SETCONFIGPARAMS", SetConfigParams);
-   AddCommand("GETQUEUEPARAMS", GetQueueParams);
-   AddCommand("SETQUEUEPARAMS", SetQueueParams);
-   AddCommand("LOOPBACK", Loopback);
-   AddCommand("DISPLAYRAWMODEDATA", DisplayRawModeData);
-   AddCommand("AUTOMATICREADMODE", AutomaticReadMode);
-   AddCommand("SETBAUDRATE", SetBaudRate);
-   AddCommand("SEND", SendData);
-   AddCommand("HELP", DisplayHelp);
-   AddCommand("MEMORYUSAGE", QueryMemory);
-}
-
-    This function is responsible for taking the input from the user
-    and dispatching the appropriate Command Function.  First, this
-    function retrieves a String of user input, parses the user input
-    into Command and Parameters, and finally executes the Command or
-    Displays an Error Message if the input is not a valid Command.
-static void UserInterface_Server(void)
-{
-    Next display the available commands.
-   DisplayHelp(NULL);
-
-    Clear the installed command.
-   ClearCommands();
-
-    Install the commands revelant for this UI.
-   AddCommand("INQUIRY", Inquiry);
-   AddCommand("DISPLAYINQUIRYLIST", DisplayInquiryList);
-   AddCommand("PAIR", Pair);
-   AddCommand("ENDPAIRING", EndPairing);
-   AddCommand("PINCODERESPONSE", PINCodeResponse);
-   AddCommand("PASSKEYRESPONSE", PassKeyResponse);
-   AddCommand("USERCONFIRMATIONRESPONSE", UserConfirmationResponse);
-   AddCommand("SETDISCOVERABILITYMODE", SetDiscoverabilityMode);
-   AddCommand("SETCONNECTABILITYMODE", SetConnectabilityMode);
-   AddCommand("SETPAIRABILITYMODE", SetPairabilityMode);
-   AddCommand("CHANGESIMPLEPAIRINGPARAMETERS", ChangeSimplePairingParameters);
-   AddCommand("GETLOCALADDRESS", GetLocalAddress);
-   AddCommand("SETLOCALNAME", SetLocalName);
-   AddCommand("GETLOCALNAME", GetLocalName);
-   AddCommand("SETCLASSOFDEVICE", SetClassOfDevice);
-   AddCommand("GETCLASSOFDEVICE", GetClassOfDevice);
-   AddCommand("GETREMOTENAME", GetRemoteName);
-   AddCommand("SNIFFMODE", SniffMode);
-   AddCommand("EXITSNIFFMODE", ExitSniffMode);
-   AddCommand("OPEN", OpenServer);
-   AddCommand("CLOSE", CloseServer);
-   AddCommand("READ", Read);
-   AddCommand("WRITE", Write);
-   AddCommand("GETCONFIGPARAMS", GetConfigParams);
-   AddCommand("SETCONFIGPARAMS", SetConfigParams);
-   AddCommand("GETQUEUEPARAMS", GetQueueParams);
-   AddCommand("SETQUEUEPARAMS", SetQueueParams);
-   AddCommand("LOOPBACK", Loopback);
-   AddCommand("DISPLAYRAWMODEDATA", DisplayRawModeData);
-   AddCommand("AUTOMATICREADMODE", AutomaticReadMode);
-   AddCommand("SETBAUDRATE", SetBaudRate);
-   AddCommand("SEND", SendData);
-   AddCommand("HELP", DisplayHelp);
-   AddCommand("MEMORYUSAGE", QueryMemory);
-}
-
-    The following function is responsible for choosing the user
-    interface to present to the user.
-static void UserInterface_Selection(void)
-{
-    Next display the available commands.
-   DisplayHelp(NULL);
-
-   ClearCommands();
-
-   AddCommand("SERVER", ServerMode);
-   AddCommand("CLIENT", ClientMode);
-   AddCommand("HELP", DisplayHelp);
-}
-
-    The following function is responsible for parsing user input
-    and call appropriate command function.
-static Boolean_t CommandLineInterpreter(char *Command)
-{
-   int           Result = !EXIT_CODE;
-   Boolean_t     ret_val = FALSE;
-   UserCommand_t TempCommand;
-
-    The string input by the user contains a value, now run the string
-    through the Command Parser.
-   if(CommandParser(&TempCommand, Command) >= 0)
-   {
-      Display(("\r\n"));
-
-       The Command was successfully parsed run the Command.
-      Result = CommandInterpreter(&TempCommand);
-      switch(Result)
-      {
-         case INVALID_COMMAND_ERROR:
-            Display(("Invalid Command: %s.\r\n",TempCommand.Command));
-            break;
-         case FUNCTION_ERROR:
-            Display(("Function Error.\r\n"));
-            break;
-         case EXIT_CODE:
-            if(ServerPortID)
-               CloseServer(NULL);
-            else
-            {
-               if(SerialPortID)
-                  CloseRemoteServer(NULL);
-            }
-
-             Restart the User Interface Selection.
-            UI_Mode = UI_MODE_SELECT;
-
-             Set up the Selection Interface.
-            UserInterface_Selection();
-            break;
-      }
-
-       Display a prompt.
-      DisplayPrompt();
-
-      ret_val = TRUE;
-   }
-   else
-   {
-       Display a prompt.
-      DisplayPrompt();
-
-      Display(("\r\nInvalid Command.\r\n"));
-   }
-
-   return(ret_val);
-}
-*/
-
-   /* The following function is responsible for converting number       */
-   /* strings to there unsigned integer equivalent.  This function can  */
-   /* handle leading and tailing white space, however it does not handle*/
-   /* signed or comma delimited values.  This function takes as its     */
-   /* input the string which is to be converted.  The function returns  */
-   /* zero if an error occurs otherwise it returns the value parsed from*/
-   /* the string passed as the input parameter.                         */
-static unsigned long StringToUnsignedInteger(char *StringInteger)
-{
-   int           IsHex;
-   unsigned int  Index;
-   unsigned long ret_val = 0;
-
-   /* Before proceeding make sure that the parameter that was passed as */
-   /* an input appears to be at least semi-valid.                       */
-   if((StringInteger) && (BTPS_StringLength(StringInteger)))
-   {
-      /* Initialize the variable.                                       */
-      Index = 0;
-
-      /* Next check to see if this is a hexadecimal number.             */
-      if(BTPS_StringLength(StringInteger) > 2)
-      {
-         if((StringInteger[0] == '0') && ((StringInteger[1] == 'x') || (StringInteger[1] == 'X')))
-         {
-            IsHex = 1;
-
-            /* Increment the String passed the Hexadecimal prefix.      */
-            StringInteger += 2;
-         }
-         else
-            IsHex = 0;
-      }
-      else
-         IsHex = 0;
-
-      /* Process the value differently depending on whether or not a    */
-      /* Hexadecimal Number has been specified.                         */
-      if(!IsHex)
-      {
-         /* Decimal Number has been specified.                          */
-         while(1)
-         {
-            /* First check to make sure that this is a valid decimal    */
-            /* digit.                                                   */
-            if((StringInteger[Index] >= '0') && (StringInteger[Index] <= '9'))
-            {
-               /* This is a valid digit, add it to the value being      */
-               /* built.                                                */
-               ret_val += (StringInteger[Index] & 0xF);
-
-               /* Determine if the next digit is valid.                 */
-               if(((Index + 1) < BTPS_StringLength(StringInteger)) && (StringInteger[Index+1] >= '0') && (StringInteger[Index+1] <= '9'))
-               {
-                  /* The next digit is valid so multiply the current    */
-                  /* return value by 10.                                */
-                  ret_val *= 10;
-               }
-               else
-               {
-                  /* The next value is invalid so break out of the loop.*/
-                  break;
-               }
-            }
-
-            Index++;
-         }
-      }
-      else
-      {
-         /* Hexadecimal Number has been specified.                      */
-         while(1)
-         {
-            /* First check to make sure that this is a valid Hexadecimal*/
-            /* digit.                                                   */
-            if(((StringInteger[Index] >= '0') && (StringInteger[Index] <= '9')) || ((StringInteger[Index] >= 'a') && (StringInteger[Index] <= 'f')) || ((StringInteger[Index] >= 'A') && (StringInteger[Index] <= 'F')))
-            {
-               /* This is a valid digit, add it to the value being      */
-               /* built.                                                */
-               if((StringInteger[Index] >= '0') && (StringInteger[Index] <= '9'))
-                  ret_val += (StringInteger[Index] & 0xF);
-               else
-               {
-                  if((StringInteger[Index] >= 'a') && (StringInteger[Index] <= 'f'))
-                     ret_val += (StringInteger[Index] - 'a' + 10);
-                  else
-                     ret_val += (StringInteger[Index] - 'A' + 10);
-               }
-
-               /* Determine if the next digit is valid.                 */
-               if(((Index + 1) < BTPS_StringLength(StringInteger)) && (((StringInteger[Index+1] >= '0') && (StringInteger[Index+1] <= '9')) || ((StringInteger[Index+1] >= 'a') && (StringInteger[Index+1] <= 'f')) || ((StringInteger[Index+1] >= 'A') && (StringInteger[Index+1] <= 'F'))))
-               {
-                  /* The next digit is valid so multiply the current    */
-                  /* return value by 16.                                */
-                  ret_val *= 16;
-               }
-               else
-               {
-                  /* The next value is invalid so break out of the loop.*/
-                  break;
-               }
-            }
-
-            Index++;
-         }
-      }
-   }
-
-   return(ret_val);
-}
-
-   /* The following function is responsible for parsing strings into    */
-   /* components.  The first parameter of this function is a pointer to */
-   /* the String to be parsed.  This function will return the start of  */
-   /* the string upon success and a NULL pointer on all errors.         */
-/*static char *StringParser(char *String)
-{
-   int   Index;
-   char *ret_val = NULL;
-
-    Before proceeding make sure that the string passed in appears to
-    be at least semi-valid.
-   if((String) && (BTPS_StringLength(String)))
-   {
-       The string appears to be at least semi-valid.  Search for the
-       first space character and replace it with a NULL terminating
-       character.
-      for(Index=0, ret_val=String;Index < BTPS_StringLength(String);Index++)
-      {
-          Is this the space character.
-         if((String[Index] == ' ') || (String[Index] == '\r') || (String[Index] == '\n'))
-         {
-             This is the space character, replace it with a NULL
-             terminating character and set the return value to the
-             begining character of the string.
-            String[Index] = '\0';
-            break;
-         }
-      }
-   }
-
-   return(ret_val);
-}*/
-
-   /* This function is responsable for taking command strings and       */
-   /* parsing them into a command, param1, and param2.  After parsing   */
-   /* this string the data is stored into a UserCommand_t structure to  */
-   /* be used by the interpreter.  The first parameter of this function */
-   /* is the structure used to pass the parsed command string out of the*/
-   /* function.  The second parameter of this function is the string    */
-   /* that is parsed into the UserCommand structure.  Successful        */
-   /* execution of this function is denoted by a retrun value of zero.  */
-   /* Negative return values denote an error in the parsing of the      */
-   /* string parameter.                                                 */
-/*static int CommandParser(UserCommand_t *TempCommand, char *Input)
-{
-   int            ret_val;
-   int            StringLength;
-   char          *LastParameter;
-   unsigned int   Count         = 0;
-
-    Before proceeding make sure that the passed parameters appear to
-    be at least semi-valid.
-   if((TempCommand) && (Input) && (BTPS_StringLength(Input)))
-   {
-       First get the initial string length.
-      StringLength = BTPS_StringLength(Input);
-
-       Retrieve the first token in the string, this should be the
-       commmand.
-      TempCommand->Command = StringParser(Input);
-
-       Flag that there are NO Parameters for this Command Parse.
-      TempCommand->Parameters.NumberofParameters = 0;
-
-        Check to see if there is a Command
-      if(TempCommand->Command)
-      {
-          Initialize the return value to zero to indicate success on
-          commands with no parameters.
-         ret_val    = 0;
-
-          Adjust the UserInput pointer and StringLength to remove the
-          Command from the data passed in before parsing the
-          parameters.
-         Input        += BTPS_StringLength(TempCommand->Command)+1;
-         StringLength  = BTPS_StringLength(Input);
-
-          There was an available command, now parse out the parameters
-         while((StringLength > 0) && ((LastParameter = StringParser(Input)) != NULL))
-         {
-             There is an available parameter, now check to see if
-             there is room in the UserCommand to store the parameter
-            if(Count < (sizeof(TempCommand->Parameters.Params)/sizeof(Parameter_t)))
-            {
-                Save the parameter as a string.
-               TempCommand->Parameters.Params[Count].strParam = LastParameter;
-
-                Save the parameter as an unsigned int intParam will
-                have a value of zero if an error has occurred.
-               TempCommand->Parameters.Params[Count].intParam = StringToUnsignedInteger(LastParameter);
-
-               Count++;
-               Input        += BTPS_StringLength(LastParameter)+1;
-               StringLength -= BTPS_StringLength(LastParameter)+1;
-
-               ret_val = 0;
-            }
-            else
-            {
-                Be sure we exit out of the Loop.
-               StringLength = 0;
-
-               ret_val      = TO_MANY_PARAMS;
-            }
-         }
-
-          Set the number of parameters in the User Command to the
-          number of found parameters
-         TempCommand->Parameters.NumberofParameters = Count;
-      }
-      else
-      {
-          No command was specified
-         ret_val = NO_COMMAND_ERROR;
-      }
-   }
-   else
-   {
-       One or more of the passed parameters appear to be invalid.
-      ret_val = INVALID_PARAMETERS_ERROR;
-   }
-
-   return(ret_val);
-}*/
-
-   /* This function is responsible for determining the command in which */
-   /* the user entered and running the appropriate function associated  */
-   /* with that command.  The first parameter of this function is a     */
-   /* structure containing information about the commmand to be issued. */
-   /* This information includes the command name and multiple parameters*/
-   /* which maybe be passed to the function to be executed.  Successful */
-   /* execution of this function is denoted by a return value of zero.  */
-   /* A negative return value implies that that command was not found   */
-   /* and is invalid.                                                   */
-/*static int CommandInterpreter(UserCommand_t *TempCommand)
-{
-   int               i;
-   int               ret_val;
-   CommandFunction_t CommandFunction;
-
-    If the command is not found in the table return with an invaild
-    command error
-   ret_val = INVALID_COMMAND_ERROR;
-
-    Let's make sure that the data passed to us appears semi-valid.
-   if((TempCommand) && (TempCommand->Command))
-   {
-       Now, let's make the Command string all upper case so that we
-       compare against it.
-      for(i=0;i<BTPS_StringLength(TempCommand->Command);i++)
-      {
-         if((TempCommand->Command[i] >= 'a') && (TempCommand->Command[i] <= 'z'))
-            TempCommand->Command[i] -= ('a' - 'A');
-      }
-
-       Check to see if the command which was entered was exit.
-      if(BTPS_MemCompare(TempCommand->Command, "QUIT", BTPS_StringLength("QUIT")) != 0)
-      {
-          The command entered is not exit so search for command in
-          table.
-         if((CommandFunction = FindCommand(TempCommand->Command)) != NULL)
-         {
-             The command was found in the table so call the command.
-            ret_val = (*CommandFunction)(&TempCommand->Parameters);
-            if(!ret_val)
-            {
-                Return success to the caller.
-               ret_val = 0;
-            }
-            else
-            {
-               if((ret_val != EXIT_CODE) && (ret_val != EXIT_MODE))
-                  ret_val = FUNCTION_ERROR;
-            }
-         }
-      }
-      else
-      {
-          The command entered is exit, set return value to EXIT_CODE
-          and return.
-         ret_val = EXIT_CODE;
-      }
-   }
-   else
-      ret_val = INVALID_PARAMETERS_ERROR;
-
-   return(ret_val);
-}*/
-
-   /* The following function is provided to allow a means to            */
-   /* programatically add Commands the Global (to this module) Command  */
-   /* Table.  The Command Table is simply a mapping of Command Name     */
-   /* (NULL terminated ASCII string) to a command function.  This       */
-   /* function returns zero if successful, or a non-zero value if the   */
-   /* command could not be added to the list.                           */
-/*
-static int AddCommand(char *CommandName, CommandFunction_t CommandFunction)
-{
-   int ret_val = 0;
-
-    First, make sure that the parameters passed to us appear to be
-    semi-valid.
-   if((CommandName) && (CommandFunction))
-   {
-       Next, make sure that we still have room in the Command Table
-       to add commands.
-      if(NumberCommands < MAX_SUPPORTED_COMMANDS)
-      {
-          Simply add the command data to the command table and
-          increment the number of supported commands.
-         CommandTable[NumberCommands].CommandName       = CommandName;
-         CommandTable[NumberCommands++].CommandFunction = CommandFunction;
-
-          Return success to the caller.
-         ret_val                                        = 0;
-      }
-      else
-         ret_val = 1;
-   }
-   else
-      ret_val = 1;
-
-   return(ret_val);
-}
-*/
-
-   /* The following function searches the Command Table for the         */
-   /* specified Command.  If the Command is found, this function returns*/
-   /* a NON-NULL Command Function Pointer.  If the command is not found */
-   /* this function returns NULL.                                       */
-/*static CommandFunction_t FindCommand(char *Command)
-{
-   unsigned int      Index;
-   CommandFunction_t ret_val;
-
-    First, make sure that the command specified is semi-valid.
-   if(Command)
-   {
-       Now loop through each element in the table to see if there is
-       a match.
-      for(Index=0,ret_val=NULL;((Index<NumberCommands) && (!ret_val));Index++)
-      {
-         if((BTPS_StringLength(CommandTable[Index].CommandName) == BTPS_StringLength(Command)) && (BTPS_MemCompare(Command, CommandTable[Index].CommandName, BTPS_StringLength(CommandTable[Index].CommandName)) == 0))
-            ret_val = CommandTable[Index].CommandFunction;
-      }
-   }
-   else
-      ret_val = NULL;
-
-   return(ret_val);
-}*/
-
-   /* The following function is provided to allow a means to clear out  */
-   /* all available commands from the command table.                    */
-/*
-static void ClearCommands(void)
-{
-    Simply flag that there are no commands present in the table.
-   NumberCommands = 0;
-}
-*/
 
    /* The following function is responsible for converting data of type */
    /* BD_ADDR to a string.  The first parameter of this function is the */
@@ -1018,34 +478,7 @@ static void LinkKeyToStr(Link_Key_t Link_Key, LinkKeyStr_t LinkKeyStr)
    BTPS_SprintF((char *)LinkKeyStr, "0x%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", Link_Key.Link_Key0, Link_Key.Link_Key1, Link_Key.Link_Key2, Link_Key.Link_Key3, Link_Key.Link_Key4, Link_Key.Link_Key5, Link_Key.Link_Key6, Link_Key.Link_Key7, Link_Key.Link_Key8, Link_Key.Link_Key9, Link_Key.Link_Key10, Link_Key.Link_Key11, Link_Key.Link_Key12, Link_Key.Link_Key13, Link_Key.Link_Key14, Link_Key.Link_Key15);
 }
 
-static void SaveLinkKeyInfoToFlash(LinkKeyInfo_t *LinkKeyInfoPtr, int LinkKeyInfoIndex)
-{
-	char *LinkKeyInfoBytePtr = ((char *)LinkKeyInfoPtr);	// THIS IS IMPLEMENTATION SPECIFIC. Since the primitive datatype in LinkKeyInfo_t is byte, it should have no issues with alignment
-	int LinkKeyInfoSize = sizeof(LinkKeyInfo_t)*(LinkKeyInfoIndex+1);
-	int offset=0;
-	char *FlashSeg = LINK_KEY_INFO_FLASH_SEG;
-	EraseInfoFlashSeg(FlashSeg);
 
-	WriteBytesToInfoFlashSeg(FlashSeg, offset, LinkKeyInfoBytePtr, LinkKeyInfoSize);
-
-	char *DummyZeroArr;
-	DummyZeroArr= (char*) malloc(sizeof(LinkKeyInfo_t)*MAX_SUPPORTED_LINK_KEYS-LinkKeyInfoSize);
-	memset(DummyZeroArr,0,sizeof(DummyZeroArr));
-	WriteBytesToInfoFlashSeg(FlashSeg, offset+LinkKeyInfoSize, DummyZeroArr, sizeof(DummyZeroArr));
-	free(DummyZeroArr);
-
-}
-
-static void LoadLinkKeyInfoFromFlash(LinkKeyInfo_t *LinkKeyInfoPtr, int LinkKeyInfoIndex)
-{
-	char *LinkKeyInfoBytePtr = ((char *)LinkKeyInfoPtr);
-	int LinkKeyInfoSize = sizeof(LinkKeyInfo_t)*LinkKeyInfoIndex;
-	int offset=0;
-	char *FlashSeg = LINK_KEY_INFO_FLASH_SEG;
-
-	ReadBytesFromInfoFlashSeg(FlashSeg, offset, LinkKeyInfoBytePtr, LinkKeyInfoSize);
-
-}
 
    /* Displays the current I/O Capabilities.                            */
 static void DisplayIOCapabilities(void)
@@ -1383,70 +816,6 @@ static int DeleteLinkKey(BD_ADDR_t BD_ADDR)
    return(Result);
 }
 
-   /* The following function is responsible for displaying the current  */
-   /* Command Options for either Serial Port Client or Serial Port      */
-   /* Server.  The input parameter to this function is completely       */
-   /* ignored, and only needs to be passed in because all Commands that */
-   /* can be entered at the Prompt pass in the parsed information.  This*/
-   /* function displays the current Command Options that are available  */
-   /* and always returns zero.                                          */
-/*static int DisplayHelp(ParameterList_t *TempParam)
-{
-   if(UI_Mode == UI_MODE_IS_CLIENT)
-   {
-      Display(("\r\n"));
-      Display(("******************************************************************\r\n"));
-      Display(("* Command Options: Inquiry, DisplayInquiryList, Pair,            *\r\n"));
-      Display(("*                  EndPairing, PINCodeResponse, PassKeyResponse, *\r\n"));
-      Display(("*                  UserConfirmationResponse,                     *\r\n"));
-      Display(("*                  SetDiscoverabilityMode, SetConnectabilityMode,*\r\n"));
-      Display(("*                  SetPairabilityMode,                           *\r\n"));
-      Display(("*                  ChangeSimplePairingParameters,                *\r\n"));
-      Display(("*                  GetLocalAddress, GetLocalName, SetLocalName,  *\r\n"));
-      Display(("*                  GetClassOfDevice, SetClassOfDevice,           *\r\n"));
-      Display(("*                  GetRemoteName, SniffMode, ExitSniffMode,      *\r\n"));
-      Display(("*                  Open, Close, Read, Write,                     *\r\n"));
-      Display(("*                  GetConfigParams, SetConfigParams,             *\r\n"));
-      Display(("*                  GetQueueParams, SetQueueParams,               *\r\n"));
-      Display(("*                  Loopback, DisplayRawModeData,                 *\r\n"));
-      Display(("*                  AutomaticReadMode, SetBaudRate, Send          *\r\n"));
-      Display(("*                  Help, Quit                                    *\r\n"));
-      Display(("******************************************************************\r\n"));
-   }
-   else
-   {
-      if(UI_Mode == UI_MODE_IS_SERVER)
-      {
-         Display(("\r\n"));
-         Display(("******************************************************************\r\n"));
-         Display(("* Command Options: Inquiry, DisplayInquiryList, Pair,            *\r\n"));
-         Display(("*                  EndPairing, PINCodeResponse, PassKeyResponse, *\r\n"));
-         Display(("*                  UserConfirmationResponse,                     *\r\n"));
-         Display(("*                  SetDiscoverabilityMode, SetConnectabilityMode,*\r\n"));
-         Display(("*                  SetPairabilityMode,                           *\r\n"));
-         Display(("*                  ChangeSimplePairingParameters,                *\r\n"));
-         Display(("*                  GetLocalAddress, GetLocalName, SetLocalName,  *\r\n"));
-         Display(("*                  GetClassOfDevice, SetClassOfDevice,           *\r\n"));
-         Display(("*                  GetRemoteName, SniffMode, ExitSniffMode,      *\r\n"));
-         Display(("*                  Open, Close, Read, Write,                     *\r\n"));
-         Display(("*                  GetConfigParams, SetConfigParams,             *\r\n"));
-         Display(("*                  GetQueueParams, SetQueueParams,               *\r\n"));
-         Display(("*                  Loopback, DisplayRawModeData,                 *\r\n"));
-         Display(("*                  AutomaticReadMode, SetBaudRate, Send          *\r\n"));
-         Display(("*                  Help, Quit                                    *\r\n"));
-         Display(("******************************************************************\r\n"));
-      }
-      else
-      {
-         Display(("\r\n"));
-         Display(("******************************************************************\r\n"));
-         Display(("* Command Options: Server, Client, Help                          *\r\n"));
-         Display(("******************************************************************\r\n"));
-      }
-   }
-
-   return(0);
-}*/
 
    /* The following function is responsible for performing a General    */
    /* Inquiry for discovering Bluetooth Devices.  This function requires*/
@@ -2237,7 +1606,7 @@ static int GetLocalAddress(ParameterList_t *TempParam)
    /* The following function is responsible for setting the name of the */
    /* local Bluetooth Device to a specified name.  This function returns*/
    /* zero on successful execution and a negative value on all errors.  */
-static int SetLocalName(ParameterList_t *TempParam)
+static int SetLocalName(const char *strName)
 {
    int Result;
    int ret_val = 0;
@@ -2247,37 +1616,28 @@ static int SetLocalName(ParameterList_t *TempParam)
    {
       /* Make sure that all of the parameters required for this function*/
       /* appear to be at least semi-valid.                              */
-      if((TempParam) && (TempParam->NumberofParameters > 0) && (TempParam->Params[0].strParam))
-      {
-         /* Attempt to submit the command.                              */
-         Result = GAP_Set_Local_Device_Name(BluetoothStackID, TempParam->Params[0].strParam);
+	 /* Attempt to submit the command.                              */
+	 Result = GAP_Set_Local_Device_Name(BluetoothStackID, strName);
 
-         /* Check the return value of the submitted command for success.*/
-         if(!Result)
-         {
-            /* Display a messsage indicating that the Device Name was   */
-            /* successfully submitted.                                  */
-            Display(("Local Device Name: %s.\r\n", TempParam->Params[0].strParam));
+	 /* Check the return value of the submitted command for success.*/
+	 if(!Result)
+	 {
+		/* Display a messsage indicating that the Device Name was   */
+		/* successfully submitted.                                  */
+		Display(("Local Device Name: %s.\r\n", strName));
 
-            /* Flag success to the caller.                              */
-            ret_val = 0;
-         }
-         else
-         {
-            /* Display a message indicating that an error occured while */
-            /* attempting to set the local Device Name.                 */
-            DisplayFunctionError("GAP_Set_Local_Device_Name", Result);
+		/* Flag success to the caller.                              */
+		ret_val = 0;
+	 }
+	 else
+	 {
+		/* Display a message indicating that an error occured while */
+		/* attempting to set the local Device Name.                 */
+		DisplayFunctionError("GAP_Set_Local_Device_Name", Result);
 
-            ret_val = FUNCTION_ERROR;
-         }
-      }
-      else
-      {
-         /* One or more of the necessary parameters is/are invalid.     */
-         DisplayUsage("SetLocalName [Local Name]");
+		ret_val = FUNCTION_ERROR;
+	 }
 
-         ret_val = INVALID_PARAMETERS_ERROR;
-      }
    }
    else
    {
@@ -3586,6 +2946,11 @@ static void BTPSAPI GAP_Event_Callback(unsigned int BluetoothStackID, GAP_Event_
    GAP_Remote_Name_Event_Data_t     *GAP_Remote_Name_Event_Data;
    GAP_Authentication_Information_t  GAP_Authentication_Information;
 
+   FFISretVal ret;
+   fileIndexEntry linkKeyFile;
+   uint16_t br, bw;
+
+
    /* First, check to see if the required parameters appear to be       */
    /* semi-valid.                                                       */
    if((BluetoothStackID) && (GAP_Event_Data))
@@ -3648,7 +3013,7 @@ static void BTPSAPI GAP_Event_Callback(unsigned int BluetoothStackID, GAP_Event_
 
                   /* See if we have stored a Link Key for the specified */
                   /* device.                                            */
-                  for(Index=0;Index<(sizeof(LinkKeyInfo)/sizeof(LinkKeyInfo_t));Index++)
+                  for(Index=0;Index<MAX_SUPPORTED_LINK_KEYS;Index++)
                   {
                      if(COMPARE_BD_ADDR(LinkKeyInfo[Index].BD_ADDR, GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device))
                      {
@@ -3699,54 +3064,50 @@ static void BTPSAPI GAP_Event_Callback(unsigned int BluetoothStackID, GAP_Event_
                   ASSIGN_BD_ADDR(CurrentRemoteBD_ADDR, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
                   break;
                case atLinkKeyCreation:
-                  /* A link key creation event occurred, first display  */
-                  /* the remote device that caused this event.          */
-                  BD_ADDRToStr(GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device, Callback_BoardStr);
-                  Display(("\r\n"));
-                  Display(("atLinkKeyCreation: %s\r\n", Callback_BoardStr));
+				  /* A link key creation event occurred, first display  */
+				  /* the remote device that caused this event.          */
+				  BD_ADDRToStr(GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device, Callback_BoardStr);
+				  Display(("\r\n"));
+				  Display(("atLinkKeyCreation: %s\r\n", Callback_BoardStr));
 
-                  /* Now store the link Key in either a free location OR*/
-                  /* over the old key location.                         */
-                  ASSIGN_BD_ADDR(NULL_BD_ADDR, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+				  /* Now store the link Key in either a free location OR*/
+				  /* over the old key location.                         */
+				  //ASSIGN_BD_ADDR(NULL_BD_ADDR, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
 
-                  for(Index=0,Result=-1;Index<(sizeof(LinkKeyInfo)/sizeof(LinkKeyInfo_t));Index++)
-                  {
-                     if(COMPARE_BD_ADDR(LinkKeyInfo[Index].BD_ADDR, GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device))
-                        break;
-                     else
-                     {
-                        if((Result == (-1)) && (COMPARE_BD_ADDR(LinkKeyInfo[Index].BD_ADDR, NULL_BD_ADDR)))
-                           Result = Index;
-                     }
-                  }
+				  Result = -1;
+				  for(Index=0;Index<MAX_SUPPORTED_LINK_KEYS;Index++)
+				  {
+					 if(COMPARE_BD_ADDR(LinkKeyInfo[Index].BD_ADDR, GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device) ) {
+						 Result = Index;
+						 break;
+					 }
 
-                  /* If we didn't find a match, see if we found an empty*/
-                  /* location.                                          */
-                  if(Index == (sizeof(LinkKeyInfo)/sizeof(LinkKeyInfo_t)))
-                     Index = Result;
+				  }
 
-                  /* Check to see if we found a location to store the   */
-                  /* Link Key information into.                         */
-                  if(Index != (-1))
-                  {
-                     LinkKeyInfo[Index].BD_ADDR = GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device;
-                     LinkKeyInfo[Index].LinkKey = GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Authentication_Event_Data.Link_Key_Info.Link_Key;
-                     LinkKeyToStr(LinkKeyInfo[Index].LinkKey,Callback_LinkKeyStr);
-                     Display(("New Link Key created: %s \r\n", Callback_LinkKeyStr));
-                     SaveLinkKeyInfoToFlash(&LinkKeyInfo[0], Index);
-                     Display(("Link Key Stored at index %d.\r\n", Index));
+				  /* Store new link keys in First In, First Out order */
+				  if(Result == (-1)) {
+					  for (Index=MAX_SUPPORTED_LINK_KEYS-1; Index>0; Index--) {
+						  LinkKeyInfo[Index] = LinkKeyInfo[Index-1];
+					  }
+					  Result = 0;
+				  }
 
-                     //char dataR[129];
-                     //memset(dataR,0,129);
-                     //char *FlashSeg = LINK_KEY_INFO_FLASH_SEG;
-                     //ReadBytesFromInfoFlashSeg(FlashSeg,0,dataR,128);
-                     //Display(("Reading Link Key from flash: %s \r\n", dataR));
+				  LinkKeyInfo[Result].BD_ADDR = GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device;
+				  LinkKeyInfo[Result].LinkKey = GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Authentication_Event_Data.Link_Key_Info.Link_Key;
+				  LinkKeyToStr(LinkKeyInfo[Result].LinkKey,Callback_LinkKeyStr);
+				  Display(("New Link Key created: %s \r\n", Callback_LinkKeyStr));
 
+				  if(ret = fileCheckOut(&flashHWobj, LINK_KEY_INFO_FILE_ID, &linkKeyFile, WRITE))
+					  Display(("Error (%d) in checking out Link Key File in WRITE mode \r\n", ret));
+				  if(ret = fileWrite(&flashHWobj, &linkKeyFile, (uint8_t*)&LinkKeyInfo[0], MAX_SUPPORTED_LINK_KEYS * sizeof(LinkKeyInfo_t), &bw))
+				  	  Display(("Error (%d) in writing Link Key File on flash \r\n", ret));
+				  if(ret = fileCheckIn(&flashHWobj, &linkKeyFile))
+					  Display(("Error (%d) in checking in Link Key File \r\n", ret));
 
-                  }
-                  else
-                     Display(("Link Key array full.\r\n"));
-                  break;
+				  Display(("Link Key Stored at index %d.\r\n", Result));
+
+				  break;
+
                case atIOCapabilityRequest:
                   BD_ADDRToStr(GAP_Event_Data->Event_Data.GAP_Authentication_Event_Data->Remote_Device, Callback_BoardStr);
                   Display(("\r\n"));
@@ -4260,6 +3621,9 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
 {
 
    int ret_val = APPLICATION_ERROR_UNABLE_TO_OPEN_STACK;
+   FFISretVal ret;
+   fileIndexEntry linkKeyFile;
+   uint16_t br;
 
    /* Initiailize some defaults.                                        */
    SerialPortID           = 0;
@@ -4270,6 +3634,7 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
    NewDataArrived		  = FALSE;
    NumberofValidResponses = 0;
 
+
    /* Next, makes sure that the Driver Information passed appears to be */
    /* semi-valid.                                                       */
    if((HCI_DriverInformation) && (BTPS_Initialization))
@@ -4279,6 +3644,7 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
       {
          /* The stack was opened successfully.  Now set some defaults.  */
 
+    	  ret_val = SetLocalName(deviceName);
          /* First, attempt to set the Device to be Connectable.         */
          ret_val = SetConnect();
 
@@ -4297,9 +3663,18 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
                /* Now that the device is discoverable attempt to make it*/
                /* pairable.                                             */
             	// But before that, load LinkKeyInfo from Flash
+				if(ret = fileCheckOut(&flashHWobj, LINK_KEY_INFO_FILE_ID, &linkKeyFile, READ)) {
+					Display(("Error (%d) in checking out Link Key File in Read mode \r\n", ret));
+				}
 
-            	//WriteBytesToInfoFlashSeg()
-            	LoadLinkKeyInfoFromFlash(&LinkKeyInfo[0], MAX_SUPPORTED_LINK_KEYS);
+				if (ret = fileRead(&flashHWobj, &linkKeyFile, (uint8_t *)&LinkKeyInfo[0], MAX_SUPPORTED_LINK_KEYS * sizeof(LinkKeyInfo_t), &br)) {
+					Display(("Error (%d) in reading Link Key File \r\n", ret));
+				}
+
+				if(ret = fileCheckIn(&flashHWobj, &linkKeyFile)) {
+					Display(("Error (%d) in checking in Link Key File \r\n", ret));
+				}
+
 
                ret_val = SetPairable();
                if(!ret_val)
@@ -4310,12 +3685,6 @@ int InitializeApplication(HCI_DriverInformation_t *HCI_DriverInformation, BTPS_I
                   {
                      /* Assign a NULL BD_ADDR for comparison.           */
                      ASSIGN_BD_ADDR(NullADDR, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-                     /* Set up the Selection Interface.                 */
-                     // UserInterface_Selection();
-
-                     /* Display the first command prompt.               */
-                     // DisplayPrompt();
 
                      ParameterList_t ServerParams;
                      ServerParams.NumberofParameters = 1;

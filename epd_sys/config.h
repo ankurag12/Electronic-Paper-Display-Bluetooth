@@ -87,7 +87,8 @@ enum fileIDs {
 	WAVEFORM_FILE_ID 		=	(3),
 	HWINFO_FILE_ID			=	(4),
 	REG_OVERRIDE_FILE_ID	=	(5),
-	RECEIVED_IMG_FILE_ID 	=	(6)
+	LINK_KEY_INFO_FILE_ID	=	(6),
+	RECEIVED_IMG_FILE_ID 	=	(7)
 };
 
 #endif /* INCLUDE_CONFIG_H */
